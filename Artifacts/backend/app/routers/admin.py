@@ -1,0 +1,172 @@
+import logging
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+from .. import crud, schemas
+from ..database import get_db
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(
+    prefix="/admin",
+    tags=["Admin"],
+    # Add dependency for admin-only access here, e.g.,
+    # dependencies=[Depends(get_current_admin_user)],
+    responses={
+        404: {"description": "Not found"},
+        403: {"description": "Permission denied"},
+    },
+)
+
+# ======================================================================================
+# Audit Log Endpoints
+# ======================================================================================
+
+@router.get(
+    "/audit-logs/",
+    response_model=List[schemas.AuditLogResponse],
+    summary="Get all audit logs",
+)
+def read_audit_logs(
+    skip: int = 0,
+    limit: int = Query(default=100, lte=500),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a paginated list of all audit log entries, most recent first.
+    This endpoint is for administrative purposes to track system activity.
+    """
+    logs = crud.get_audit_logs(db, skip=skip, limit=limit)
+    return logs
+
+
+@router.get(
+    "/audit-logs/{entity_type}/{entity_id}",
+    response_model=List[schemas.AuditLogResponse],
+    summary="Get audit logs for a specific entity",
+)
+def read_audit_logs_for_entity(
+    entity_type: str,
+    entity_id: int,
+    skip: int = 0,
+    limit: int = Query(default=100, lte=500),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve all audit log entries related to a specific entity
+    (e.g., a project, a user).
+
+    - **entity_type**: The type of the entity (e.g., 'project', 'user').
+    - **entity_id**: The ID of the entity.
+    """
+    logs = crud.get_audit_logs_for_entity(
+        db, entity_type=entity_type, entity_id=entity_id, skip=skip, limit=limit
+    )
+    return logs
+
+
+# ======================================================================================
+# AI Recommendation Endpoints
+# ======================================================================================
+
+@router.get(
+    "/recommendations/",
+    response_model=List[schemas.AIRecommendationResponse],
+    summary="Get all AI recommendations",
+)
+def read_ai_recommendations(
+    status_filter: Optional[schemas.RecommendationStatus] = Query(None, alias="status"),
+    skip: int = 0,
+    limit: int = Query(default=50, lte=200),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of AI-generated recommendations.
+    Can be filtered by status.
+    """
+    # Note: The provided CRUD function doesn't support filtering.
+    # In a real app, you would add filtering logic to the CRUD layer.
+    # For now, we fetch all and filter in memory if needed, but this is inefficient.
+    recommendations = crud.get_ai_recommendations(db, skip=skip, limit=limit)
+    if status_filter:
+        recommendations = [r for r in recommendations if r.status == status_filter]
+    return recommendations
+
+
+@router.get(
+    "/recommendations/{recommendation_id}",
+    response_model=schemas.AIRecommendationResponse,
+    summary="Get a specific AI recommendation",
+)
+def read_ai_recommendation(recommendation_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieve a single AI recommendation by its ID.
+    """
+    db_rec = crud.get_ai_recommendation(db, recommendation_id=recommendation_id)
+    if db_rec is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recommendation not found"
+        )
+    return db_rec
+
+
+@router.put(
+    "/recommendations/{recommendation_id}",
+    response_model=schemas.AIRecommendationResponse,
+    summary="Update the status of an AI recommendation",
+)
+def update_ai_recommendation_status(
+    recommendation_id: int,
+    update_data: schemas.AIRecommendationUpdate,
+    db: Session = Depends(get_db),
+):
+    """
+    Update the status of a recommendation (e.g., to 'Accepted' or 'Rejected').
+    This is typically done by a user acting on the recommendation.
+    """
+    updated_rec = crud.update_ai_recommendation(
+        db, recommendation_id=recommendation_id, recommendation_update=update_data
+    )
+    if updated_rec is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recommendation not found"
+        )
+    logger.info(f"AI Recommendation {recommendation_id} status updated to {update_data.status}")
+    return updated_rec
+
+
+# ======================================================================================
+# AI RAG Cache Endpoints (for debugging/management)
+# ======================================================================================
+
+@router.get(
+    "/rag-cache/",
+    response_model=List[schemas.AIRagCacheResponse],
+    summary="Get all RAG cache documents",
+)
+def read_all_rag_cache(db: Session = Depends(get_db)):
+    """
+    Retrieve all documents currently in the AI RAG cache.
+    Useful for debugging and management.
+    """
+    return crud.get_all_rag_cache_documents(db)
+
+
+@router.delete(
+    "/rag-cache/{cache_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a RAG cache item",
+)
+def delete_rag_cache_item(cache_id: int, db: Session = Depends(get_db)):
+    """
+    Manually delete a specific item from the RAG cache.
+    """
+    success = crud.delete_rag_cache(db, cache_id=cache_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="RAG cache item not found"
+        )
+    logger.info(f"RAG cache item with ID {cache_id} was deleted.")
+    return None

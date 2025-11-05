@@ -1,0 +1,157 @@
+import logging
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+from .. import crud, schemas
+from ..core import security  # Assuming a security module for password hashing
+from ..database import get_db
+
+# It's good practice to have a logger per module
+logger = logging.getLogger(__name__)
+
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"],
+    responses={404: {"description": "Not found"}},
+)
+
+
+@router.post(
+    "/",
+    response_model=schemas.UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new user",
+)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """
+    Create a new user in the system.
+
+    - **email**: Must be a unique email address.
+    - **password**: Must be at least 8 characters long.
+    - **system_role**: Defines the user's permissions.
+    """
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        logger.warning(f"Attempted to create user with existing email: {user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+    
+    # In a real app, password hashing is critical.
+    # This call assumes you have a security utility to handle it.
+    hashed_password = security.get_password_hash(user.password)
+    
+    # The CRUD function should not handle the raw password.
+    created_user = crud.create_user(db=db, user=user, password_hash=hashed_password)
+    logger.info(f"User created successfully with ID: {created_user.id}")
+    return created_user
+
+
+@router.get(
+    "/",
+    response_model=List[schemas.UserResponse],
+    summary="Get a list of all users",
+)
+def read_users(
+    skip: int = 0,
+    limit: int = Query(default=100, lte=200),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve a list of users with pagination.
+    - **skip**: Number of records to skip.
+    - **limit**: Maximum number of records to return (max 200).
+    """
+    users = crud.get_users(db, skip=skip, limit=limit)
+    return users
+
+
+@router.get(
+    "/{user_id}",
+    response_model=schemas.UserWithAssignmentsResponse,
+    summary="Get a specific user by ID with their assignments",
+)
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieve a single user by their ID, including all their project assignments.
+    """
+    db_user = crud.get_user(db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    
+    # Use the specialized CRUD function to get assignments
+    assignments = crud.get_assignments_for_user(db, user_id=user_id)
+    
+    # Combine the data into the detailed response schema
+    user_response = schemas.UserWithAssignmentsResponse.model_validate(db_user)
+    user_response.assignments = assignments
+    
+    return user_response
+
+
+@router.put(
+    "/{user_id}",
+    response_model=schemas.UserResponse,
+    summary="Update an existing user",
+)
+def update_user(
+    user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db)
+):
+    """
+    Update a user's details.
+    - Only the fields provided in the request body will be updated.
+    - To change a password, provide a new `password` field.
+    """
+    db_user = crud.get_user(db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # If email is being changed, ensure it's not already taken
+    if user_update.email and user_update.email != db_user.email:
+        existing_user = crud.get_user_by_email(db, email=user_update.email)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already in use by another account.",
+            )
+
+    update_data = user_update.model_dump(exclude_unset=True)
+    
+    # Handle password update separately
+    if "password" in update_data and update_data["password"]:
+        hashed_password = security.get_password_hash(update_data["password"])
+        update_data["password_hash"] = hashed_password
+        del update_data["password"]
+
+    # The CRUD function expects a Pydantic model, so we create one
+    # This ensures type safety and consistency with the CRUD layer's expectations
+    final_update_schema = crud.UserUpdate(**update_data)
+
+    updated_user = crud.update_user(db, user_id=user_id, user_update=final_update_schema)
+    logger.info(f"User with ID {user_id} was updated.")
+    return updated_user
+
+
+@router.delete(
+    "/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a user",
+)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    """
+    Permanently delete a user from the system. This action is irreversible.
+    """
+    success = crud.delete_user(db, user_id=user_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    logger.info(f"User with ID {user_id} was deleted.")
+    return None
