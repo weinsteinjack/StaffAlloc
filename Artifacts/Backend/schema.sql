@@ -1,4 +1,3 @@
-```sql
 -- TripSplit SQLite Schema
 -- Author: Senior Data Architect
 -- Version: 1.0
@@ -191,7 +190,7 @@ CREATE TABLE ai_categorization_feedback (
     expense_id INTEGER NOT NULL UNIQUE, -- One feedback entry per expense
     suggested_category_id INTEGER,
     user_chosen_category_id INTEGER,
-    was_suggestion_accepted BOOLEAN NOT NULL,
+    was_suggestion_accepted INTEGER NOT NULL CHECK (was_suggestion_accepted IN (0, 1)), -- BOOLEAN: 0=false, 1=true
     feedback_timestamp TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now')),
 
     FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE,
@@ -331,4 +330,3 @@ INSERT INTO expense_categories (name, icon_name) VALUES
     ('Miscellaneous', 'question-circle');
 
 -- End of schema file
-```
