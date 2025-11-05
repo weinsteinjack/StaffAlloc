@@ -23,22 +23,22 @@ The system is designed with a classic layered architecture to promote separation
 
 ```mermaid
 graph TD
-    subgraph Client Layer
-        A[React SPA]
-        B[Mobile Client - Future]
-        C[CLI / Test Scripts]
+    subgraph "Client Layer"
+        A["React SPA"]
+        B["Mobile Client - Future"]
+        C["CLI / Test Scripts"]
     end
 
-    subgraph API Layer (FastAPI)
-        D[Auth Router<br>/auth]
-        E[Trips Router<br>/trips]
-        F[Expenses Router<br>/trips/{id}/expenses]
-        G[Settlements Router<br>/trips/{id}/settle]
-        H[Reports Router<br>/trips/{id}/report]
-        I[AI Router<br>/ai/chat]
+    subgraph "API Layer (FastAPI)"
+        D["Auth Router<br>/auth"]
+        E["Trips Router<br>/trips"]
+        F["Expenses Router<br>/trips/{id}/expenses"]
+        G["Settlements Router<br>/trips/{id}/settle"]
+        H["Reports Router<br>/trips/{id}/report"]
+        I["AI Router<br>/ai/chat"]
     end
 
-    subgraph Service Layer (Business Logic)
+    subgraph "Service Layer (Business Logic)"
         J[AuthService]
         K[TripService]
         L[ExpenseService]
@@ -48,23 +48,23 @@ graph TD
         P[RAGService]
     end
 
-    subgraph Data Access Layer (SQLAlchemy)
-        Q[User Repository]
-        R[Trip Repository]
-        S[Expense Repository]
-        T[SQLAlchemy Models]
-        U[Alembic Migrations]
+    subgraph "Data Access Layer (SQLAlchemy)"
+        Q["User Repository"]
+        R["Trip Repository"]
+        S["Expense Repository"]
+        T["SQLAlchemy Models"]
+        U["Alembic Migrations"]
     end
 
-    subgraph Background Jobs
-        V[APScheduler<br>e.g., report generation]
+    subgraph "Background Jobs"
+        V["APScheduler<br>e.g., report generation"]
     end
 
-    subgraph Integration Adapters
-        W[Local File Storage<br>Receipts, Reports]
-        X[Vector Store Adapter<br>ChromaDB / LanceDB]
-        Y[Local LLM Adapter<br>Ollama / LM Studio]
-        Z[SMTP Adapter<br>Local SMTP Debug Server]
+    subgraph "Integration Adapters"
+        W["Local File Storage<br>Receipts, Reports"]
+        X["Vector Store Adapter<br>ChromaDB / LanceDB"]
+        Y["Local LLM Adapter<br>Ollama / LM Studio"]
+        Z["SMTP Adapter<br>Local SMTP Debug Server"]
     end
 
     A & B & C --> D & E & F & G & H & I
@@ -81,7 +81,7 @@ graph TD
     M --> S
     N --> S
     O --> S
-    P --> S & X & Y
+    P --> S
 
     Q & R & S --> T & U
 
