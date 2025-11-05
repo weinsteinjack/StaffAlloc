@@ -1,0 +1,33 @@
+@startuml StaffAlloc System Context
+!include <C4/C4_Context.puml>
+
+title System Context Diagram: StaffAlloc Local Development Environment
+
+LAYOUT_WITH_LEGEND()
+
+Person(pm, "Project Manager", "Manages project staffing, budgets, and timelines. (e.g., Priya)")
+Person(director, "Director / Optimizer", "Oversees portfolio health and resource utilization. (e.g., David, Maria)")
+
+System_Boundary(workstation, "Developer Workstation") {
+    System(web_client, "React Web Client", "Vite SPA running on localhost:5173. Provides the interactive UI for managing allocations.")
+    System(backend, "FastAPI Backend", "Python API running on localhost:8000. Handles business logic, data persistence, and AI integration.")
+    SystemDb(sqlite, "SQLite Database", "A single file (staffalloc.db) storing all relational data like projects, employees, and allocations.")
+    SystemDb(file_storage, "Local File Storage", "A directory on the filesystem (./data) used for storing exported reports and other artifacts.")
+    SystemDb(vector_db, "Local Vector DB", "ChromaDB instance persisting to the filesystem. Stores embeddings of project/allocation data for RAG.")
+    System(ai_runtime, "Local AI Runtime", "Ollama or LM Studio running a local LLM. Provides an API for text generation and analysis.")
+    System(mailhog, "MailHog SMTP Server", "A local email testing tool running on localhost:8025. Catches all outgoing emails for inspection.")
+}
+
+' Relationships
+Rel(pm, web_client, "Views and manages staffing plans", "HTTPS")
+Rel(director, web_client, "Views dashboards and runs reports", "HTTPS")
+
+Rel(web_client, backend, "Makes API calls", "HTTP/JSON")
+
+Rel(backend, sqlite, "Reads/Writes staffing data", "SQLAlchemy (aiosqlite)")
+Rel(backend, file_storage, "Writes/Reads exported reports", "File I/O")
+Rel(backend, vector_db, "Stores/Retrieves embeddings for RAG", "HTTP/SDK")
+Rel(backend, ai_runtime, "Sends prompts for generation/analysis", "HTTP/JSON")
+Rel(backend, mailhog, "Sends mock emails for notifications", "SMTP")
+
+@enduml
