@@ -27,11 +27,13 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 ROOT_PATH = Path(__file__).resolve().parents[1]
-if str(ROOT_PATH) not in sys.path:
-    sys.path.insert(0, str(ROOT_PATH))
+BACKEND_PATH = ROOT_PATH / "Artifacts" / "backend"
+
+if str(BACKEND_PATH) not in sys.path:
+    sys.path.insert(0, str(BACKEND_PATH))
 
 from app.db.session import get_db
-from app.main import create_app
+from app.main import app as fastapi_app
 from app.models import Base
 
 
@@ -75,9 +77,7 @@ def db_session(session_factory: sessionmaker) -> Generator[Session, None, None]:
 
 @pytest.fixture
 def app(session_factory: sessionmaker) -> Generator[FastAPI, None, None]:
-    """Create a FastAPI application with the test database override."""
-
-    application = create_app()
+    """Provide the FastAPI application with the test database override."""
 
     def _get_test_db() -> Generator[Session, None, None]:
         db = session_factory()
@@ -86,11 +86,11 @@ def app(session_factory: sessionmaker) -> Generator[FastAPI, None, None]:
         finally:
             db.close()
 
-    application.dependency_overrides[get_db] = _get_test_db
+    fastapi_app.dependency_overrides[get_db] = _get_test_db
     try:
-        yield application
+        yield fastapi_app
     finally:
-        application.dependency_overrides.pop(get_db, None)
+        fastapi_app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture
@@ -115,4 +115,11 @@ def stub_password_hash(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(security, "get_password_hash", fake_hash)
     monkeypatch.setattr(security, "verify_password", fake_verify)
+
+
+@pytest.fixture(scope="session")
+def api_prefix() -> str:
+    """Shared API prefix used by tests when building endpoint URLs."""
+
+    return "/api/v1"
 

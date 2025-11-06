@@ -18,18 +18,18 @@ Author: Automated Assistant
 ## Key Implementation Steps
 
 ### 1. Test Harness
-- Added `Artifacts/tests/conftest.py`:
+- Added `tests/conftest.py`:
   - Injects `Artifacts/backend` onto `sys.path` so `app` resolves.
   - Overrides `get_db` to bind a clean SQLite DB per test using `Base.metadata.drop_all/create_all`.
   - Provides a shared `TestClient` fixture and `api_prefix` helper.
 
 ### 2. Initial Test Suite
-- Health and root: `Artifacts/tests/test_health.py`
-- Admin endpoints: roles, LCATs, audit logs, RAG cache, AI recommendations: `Artifacts/tests/test_admin.py`
-- Employees: CRUD, password hashing path, duplicate email prevention: `Artifacts/tests/test_employees.py`
-- Projects & Allocations: project CRUD, monthly overrides, assignment CRUD, allocation CRUD, user month summary: `Artifacts/tests/test_projects_allocations.py`
-- Reports: portfolio dashboard, project dashboard, employee timeline, utilization stub, export placeholders: `Artifacts/tests/test_reports.py`
-- AI: chat placeholder, staffing recommendation placeholder, conflicts/forecast/balance/reindex placeholders: `Artifacts/tests/test_ai.py`
+- Health and root: `tests/test_health.py`
+- Admin endpoints: roles, LCATs, audit logs, RAG cache, AI recommendations: `tests/test_admin.py`
+- Employees: CRUD, password hashing path, duplicate email prevention: `tests/test_employees.py`
+- Projects & Allocations: project CRUD, monthly overrides, assignment CRUD, allocation CRUD, user month summary: `tests/test_projects_allocations.py`
+- Reports: portfolio dashboard, project dashboard, employee timeline, utilization stub, export placeholders: `tests/test_reports.py`
+- AI: chat placeholder, staffing recommendation placeholder, conflicts/forecast/balance/reindex placeholders: `tests/test_ai.py`
 
 ### 3. First Test Run & Fixes
 - Failure: `ModuleNotFoundError: No module named 'app'` during import.
@@ -83,9 +83,9 @@ Author: Automated Assistant
 
 ## Commands Used
 - Run all tests:
-  - `python -m pytest Artifacts/tests -q`
+  - `python -m pytest tests -q`
 - Focused runs during iteration:
-  - `python -m pytest Artifacts/tests/test_projects_allocations.py -q`
+  - `python -m pytest tests/test_projects_allocations.py -q`
 
 ## Current Status
 - All tests pass in the local environment.
