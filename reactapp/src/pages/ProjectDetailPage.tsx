@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, useParams } from 'react-router-dom';
-import { AlertTriangle, CalendarDays, LayoutGrid, Loader2, UsersRound } from 'lucide-react';
+import { AlertTriangle, ArrowDownToLine, CalendarDays, LayoutGrid, Loader2, UsersRound } from 'lucide-react';
 
 import { createAllocation, createAssignment, updateAllocation } from '../api/assignments';
 import { fetchLCATs, fetchRoles } from '../api/admin';
+import { exportProjectToExcel } from '../api/reports';
 import { useMonthlyOverrideMutations, useProjectDetail } from '../hooks/useProjectDetail';
 import AllocationGrid from '../components/projects/AllocationGrid';
 import AddAssignmentModal from '../components/projects/AddAssignmentModal';
 import MonthlyHoursOverrideModal from '../components/projects/MonthlyHoursOverrideModal';
 import { fetchEmployees, fetchUserAllocationSummary } from '../api/users';
 import type { MonthlyHourOverride, ProjectAssignmentCreateInput } from '../types/api';
+import ProjectHealthPanel from '../components/projects/ProjectHealthPanel';
+import ProjectAIInsights from '../components/projects/ProjectAIInsights';
+import { SectionHeader } from '../components/common';
+import { saveBlobAsFile } from '../utils/download';
+import { useAuth } from '../context/AuthContext';
 
 type ViewMode = 'month' | 'sprint';
 
@@ -30,6 +36,8 @@ export default function ProjectDetailPage() {
   if (Number.isNaN(projectId)) {
     return <Navigate to="/projects" replace />;
   }
+
+  const { user } = useAuth();
 
   const queryClient = useQueryClient();
   const { data: project, isLoading, isError, error } = useProjectDetail(projectId);
@@ -62,6 +70,15 @@ export default function ProjectDetailPage() {
     mutationFn: ({ allocationId, hours }: { allocationId: number; hours: number }) =>
       updateAllocation(allocationId, hours),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+  });
+
+  const exportMutation = useMutation({
+    mutationFn: () => exportProjectToExcel(projectId),
+    onSuccess: (blob) => {
+      const label = project?.code ?? `project-${projectId}`;
+      const timestamp = new Date().toISOString().slice(0, 10);
+      saveBlobAsFile(blob, `staffalloc-${label}-${timestamp}.xlsx`);
+    }
   });
 
   useEffect(() => {
@@ -240,6 +257,14 @@ export default function ProjectDetailPage() {
     );
   }
 
+  if (user?.system_role === 'PM' && project.manager_id !== user.id) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-700">
+        You do not have access to this project. Ask the portfolio admin to assign you as the project manager.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -303,15 +328,52 @@ export default function ProjectDetailPage() {
             </button>
           </div>
 
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-            onClick={() => setAddAssignmentOpen(true)}
-          >
-            Add Team Member
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => exportMutation.mutate()}
+              disabled={exportMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exportMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowDownToLine className="h-4 w-4" />
+              )}
+              Export to Excel
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              onClick={() => setAddAssignmentOpen(true)}
+            >
+              Add Team Member
+            </button>
+          </div>
         </div>
+
+        {exportMutation.isError && (
+          <p className="mt-3 text-xs font-semibold text-red-600">
+            Unable to export project data. Please try again shortly.
+          </p>
+        )}
       </header>
+
+      <section className="space-y-4">
+        <SectionHeader
+          title="Project Health"
+          description="Track funded budget, allocated hours, and burn-down progress."
+        />
+        <ProjectHealthPanel projectId={project.id} />
+      </section>
+
+      <section className="space-y-4">
+        <SectionHeader
+          title="AI Assist"
+          description="Use AI to recommend staffing, detect conflicts, and balance workloads for this project."
+        />
+        <ProjectAIInsights projectId={project.id} />
+      </section>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">

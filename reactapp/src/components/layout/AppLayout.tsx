@@ -1,5 +1,9 @@
+import type { ComponentType } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { CalendarDays, LayoutDashboard, Users } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, Settings, Sparkles, Users } from 'lucide-react';
+
+import type { SystemRole } from '../../types/api';
+import { useAuth } from '../../context/AuthContext';
 
 const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
   `inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
@@ -10,6 +14,25 @@ const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
 
 export default function AppLayout() {
   const location = useLocation();
+  const { user: currentUser, logout } = useAuth();
+
+  const navItems: Array<{
+    to: string;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+    roles?: SystemRole[];
+  }> = [
+    { to: '/dashboard', label: 'Portfolio Dashboard', icon: LayoutDashboard },
+    { to: '/projects', label: 'Projects', icon: CalendarDays },
+    { to: '/teams', label: 'Teams', icon: Users },
+    { to: '/ai/chat', label: 'AI Assistant', icon: Sparkles, roles: ['Admin', 'Director', 'PM'] },
+    { to: '/ai/recommendations', label: 'AI Insights', icon: Sparkles, roles: ['Admin', 'Director'] },
+    { to: '/settings/roles-lcats', label: 'Settings', icon: Settings, roles: ['Admin'] }
+  ];
+
+  const availableNavItems = navItems.filter(
+    (item) => !item.roles || item.roles.includes(currentUser.systemRole)
+  );
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -20,26 +43,34 @@ export default function AppLayout() {
             StaffAlloc
           </Link>
           <nav className="flex items-center gap-2">
-            <NavLink to="/dashboard" className={navLinkClasses}>
-              <LayoutDashboard className="h-4 w-4" />
-              Portfolio Dashboard
-            </NavLink>
-            <NavLink to="/projects" className={navLinkClasses}>
-              <CalendarDays className="h-4 w-4" />
-              Projects
-            </NavLink>
-            <NavLink to="/teams" className={navLinkClasses}>
-              <Users className="h-4 w-4" />
-              Teams
-            </NavLink>
+            {availableNavItems.map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} className={navLinkClasses}>
+                <Icon className="h-4 w-4" />
+                {label}
+              </NavLink>
+            ))}
           </nav>
           <div className="hidden items-center gap-2 sm:flex">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
-              PP
+              {currentUser?.full_name
+                .split(' ')
+                .map((part) => part[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()}
             </div>
             <div className="text-sm">
-              <p className="font-medium text-slate-800">Priya Patel</p>
-              <p className="text-xs text-slate-500">Project Manager</p>
+              <p className="font-medium text-slate-800">{currentUser?.full_name}</p>
+              <p className="text-xs text-slate-500">
+                {currentUser?.system_role}{' '}
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="ml-3 text-blue-600 underline-offset-2 hover:underline"
+                >
+                  Sign out
+                </button>
+              </p>
             </div>
           </div>
         </div>

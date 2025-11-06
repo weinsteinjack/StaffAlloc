@@ -5,9 +5,11 @@ import { Plus, Search } from 'lucide-react';
 import { createProject, fetchProjects } from '../api/projects';
 import CreateProjectModal from '../components/projects/CreateProjectModal';
 import ProjectTable from '../components/projects/ProjectTable';
+import { useAuth } from '../context/AuthContext';
 import type { ProjectCreateInput } from '../types/api';
 
 export default function ProjectsPage() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isModalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -39,6 +41,11 @@ export default function ProjectsPage() {
     );
   });
 
+  const visibleProjects =
+    user?.system_role === 'PM'
+      ? filteredProjects.filter((project) => project.manager_id === user.id)
+      : filteredProjects;
+
   const createErrorMessage = createError instanceof Error ? createError.message : null;
 
   return (
@@ -48,6 +55,7 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
           <p className="mt-1 text-sm text-slate-500">
             Manage project staffing plans, allocations, and health in one place.
+            {user?.system_role === 'PM' && ' Showing projects assigned to you.'}
           </p>
         </div>
         <button
@@ -89,7 +97,17 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {!isLoading && !isError && <ProjectTable projects={filteredProjects} />}
+      {!isLoading && !isError && (
+        <>
+          {user?.system_role === 'PM' && visibleProjects.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white py-16 text-center text-sm text-slate-500">
+              You are not assigned to any projects yet. Ask your director to add you as the project manager.
+            </div>
+          ) : (
+            <ProjectTable projects={visibleProjects} />
+          )}
+        </>
+      )}
 
       <CreateProjectModal
         open={isModalOpen}
