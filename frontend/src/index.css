@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Remove default body centering that conflicts with our layouts */
+body {
+  margin: 0;
+  min-height: 100vh;
+}
