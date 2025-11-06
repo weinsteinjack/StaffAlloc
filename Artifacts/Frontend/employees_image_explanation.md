@@ -1,138 +1,131 @@
-Of course. Here is a detailed, developer-focused analysis of the provided UI.
+Of course. Here is a detailed breakdown of the provided UI for a developer.
 
-***
+---
 
 ### 1) Summary
-This screen is a team management dashboard that allows a user to view, search, and filter a grid of employee profiles, while also providing high-level team analytics in a sidebar.
+This is a team management dashboard screen for viewing, filtering, and getting a high-level overview of employee profiles, skills, and availability.
 
 ### 2) Visual Breakdown
-The UI is composed of a primary content area and a right-hand sidebar, all under a main application header.
 
-*   **Main Header (Top):**
-    *   **Logo:** `StaffAlloc` logo, top-left.
-    *   **Navigation:** Centered links: `Dashboard` (active), `Projects`, `Employees`. The active link has a blue underline.
+The UI is composed of a main header, a primary content area, and a right sidebar.
 
-*   **Main Content Area (Center-Left, on a light grey background):**
-    *   **Page Header:**
-        *   **Title:** "Team Members", top-left.
-        *   **Subtitle:** "Manage employee profiles, skills, and availability", directly below the title.
-        *   **Primary Action Button:** "+ Add Employee" button, top-right.
-    *   **Filter & Search Bar:**
-        *   **Search Input:** Left-aligned, with a search icon, placeholder text "Search employees...".
-        *   **Role Filters:** A row of pill-style buttons to the right of the search bar: `All` (active), `Developers`, `Designers`, `Managers`, `Data Scientists`.
+*   **Global Header (Top):**
+    *   **Top-Left:** Logo (`StaffAlloc`) with an icon.
+    *   **Top-Center:** Main navigation links: `Dashboard`, `Projects`, `Teams`, `Employees`. The `Dashboard` link appears to be the active page.
+    *   **Top-Right:** A primary call-to-action button: `+ Add Employee`.
+
+*   **Main Content Area (Center/Left):**
+    *   **Page Header:** A large title `Team Members` and a descriptive subtitle below it.
+    *   **Filter Controls (in a row-based group):**
+        *   **First Row:** A set of pill-shaped category filters: `All` (active), `Eevaestt`, `Designers`, `Managers`.
+        *   **Second Row:**
+            *   A search input field with a placeholder `Search employees...` and a magnifying glass icon on the left.
+            *   Several more pill-shaped filters, some showing data (`39%`, `Availability`, `Data Scientists`).
+            *   An "Additional Filters" button with a filter icon, a plus icon, and text.
     *   **Employee Grid:**
-        *   A responsive grid of `EmployeeCard` components (appears to be 4 columns in this view).
-    *   **Employee Card (Individual Item):**
-        *   **Container:** A white card with rounded corners and a subtle shadow.
-        *   **Profile Image:** Circular avatar, top-left.
-        *   **Initials Badge:** Small, colored circle with employee initials, overlapping the top-right of the profile image.
-        *   **Quick Action Icon:** Small, circular `+` icon button, top-right of the card.
-        *   **Employee Info:** Centered vertically: Name (bold), Job Title, Email address (lighter text).
-        *   **Skill Tags:** A row of small, colored pill-shaped tags (e.g., "React", "Figma").
-        *   **Divider:** A thin horizontal line separating the main info from the footer.
-        *   **Card Footer:** A flex row containing:
-            *   Left: "View Details" link.
-            *   Right: Status info, which varies per card (e.g., "78% allocated", "On Leave", "gap 6").
+        *   A responsive grid of `EmployeeCard` components, arranged in what appears to be 3 columns.
+        *   There are 12 cards visible in the screenshot.
 
-*   **Sidebar (Right):**
-    *   **Additional Filters Card:**
-        *   Title: "Additional Filters", with a close `X` icon.
-        *   Filters: "Availability" and "Skill Level" with radio-button-like indicators.
-    *   **Team Overview Card:**
-        *   Title: "Team Overview".
-        *   Metric: "Total employees: 47".
-        *   Chart: A donut chart showing percentage breakdowns (47%, 38%, 15%).
-    *   **Top Skills Card:**
-        *   Title: "Top skills in demand".
-        *   Subtitle: "Available (37% (38%))".
-        *   Chart: A simple vertical bar chart with two bars.
-    *   **Availability Calendar Card:**
-        *   Title: "Availability calendar".
-        *   Legend: "React", "Python", "AWS".
-        *   Grid: A 7-column grid representing days of the week, with colored squares indicating availability.
+*   **Right Sidebar:**
+    *   A vertical stack of summary/statistic cards.
+    *   **Team Overview Card:** Contains total employee count and a doughnut chart visualizing skill distribution (React, AWT, SQL).
+    *   **Team Stats Section:**
+        *   **Utilization by Status Card:** A bar chart.
+        *   **Top Skills in Demand Section:** A title for a likely upcoming widget.
+        *   **Team Availability Card:** A small calendar view.
 
 ### 3) Style Details
+
 *   **Colors:**
-    *   **Primary:** A strong blue (`#3B82F6` or similar) used for buttons, active links, icons, and chart elements.
-    *   **Background:** A very light grey (`#F8FAFC` or `slate-50`).
-    *   **Card/Surface:** White (`#FFFFFF`).
-    *   **Text (Primary):** Dark charcoal/black (`#1E293B` or `slate-800`).
-    *   **Text (Secondary):** Medium grey (`#64748B` or `slate-500`) for subtitles, emails, and labels.
-    *   **Borders:** Light grey (`#E2E8F0` or `slate-200`).
-    *   **Tag/Pill Colors:** Various soft colors with corresponding text: light green, light orange, light blue, light red.
-    *   **Chart Colors:** Blue, light green, light grey for the donut. Blue for the bar chart. Shades of green for the calendar.
+    *   **Primary Blue:** `#2563EB` (Tailwind's `blue-600`). Used for the primary button, active filter pills, active nav link indicator, progress bars, and doughnut chart segments.
+    *   **Background (Body):** A very light gray, likely `#F8FAFC` (`slate-50`).
+    *   **Background (Cards/Header):** White (`#FFFFFF`).
+    *   **Text (Primary):** Dark charcoal/slate gray, approx. `#1E293B` (`slate-800`).
+    *   **Text (Secondary/Muted):** Medium gray, approx. `#64748B` (`slate-500`). Used for subtitles, job titles, and labels.
+    *   **Text (Tertiary/Hint):** Lighter gray, approx. `#94A3B8` (`slate-400`). Used for email addresses.
+    *   **Borders:** Light gray, approx. `#E2E8F0` (`slate-200`).
+    *   **Status Indicator (Green):** A bright, clear green, approx. `#22C55E` (`green-500`).
+    *   **Chart Colors:** The doughnut chart uses the primary blue and a lighter green/teal.
+
 *   **Typography:**
-    *   **Font:** A clean, modern sans-serif (e.g., Inter, Poppins).
-    *   **Page Title:** Large, bold (approx. `24px` or `text-2xl font-bold`).
-    *   **Employee Name:** Medium, bold (approx. `16px` or `text-base font-bold`).
-    *   **Body/Labels:** Regular weight (approx. `14px` or `text-sm`).
-    *   **Links:** The "View Details" link appears to be the primary blue color.
+    *   **Font:** A clean, modern sans-serif (e.g., Inter, Manrope, or system-ui).
+    *   **Page Title (`Team Members`):** Large and bold (approx. 30px, `font-bold`).
+    *   **Card Name:** Medium-large and semi-bold (approx. 18px, `font-semibold`).
+    *   **Card Job Title/Email:** Smaller and regular weight (approx. 14px and 12px respectively).
+    *   **Button/Pill Text:** Small and medium weight (approx. 14px, `font-medium`).
+
 *   **Spacing & Layout:**
-    *   The layout uses a grid system with consistent gaps (likely `1.5rem` or `gap-6`).
-    *   Padding within cards and sections appears generous (likely `1rem` to `1.5rem` or `p-4` to `p-6`).
-    *   Elements are well-aligned, relying on flexbox for alignment within components (e.g., card footers, headers).
-*   **Borders & Shadows:**
-    *   **Corner Radius:** Consistently rounded corners on cards, buttons, and inputs (approx. `8px-12px` or `rounded-lg` / `rounded-xl`).
-    *   **Shadows:** Cards have a soft, diffuse drop shadow (`shadow-md`).
-    *   **Borders:** The search input and inactive filter pills have a 1px light grey border. The active navigation link has a 2px blue bottom border.
+    *   The overall layout uses significant whitespace for a clean look.
+    *   **Grid Gap:** The gap between employee cards is consistent (approx. `24px` or `1.5rem`).
+    *   **Card Padding:** Cards have generous internal padding (approx. `24px` or `1.5rem`).
+    *   **Element Spacing:** Consistent vertical and horizontal spacing between filter groups and the main grid (approx. `24px` to `32px`).
+    *   The main content and sidebar are separated by a large gap.
+
+*   **Borders, Radius & Shadows:**
+    *   **Card/Button Radius:** Generously rounded corners on all cards, buttons, and input fields (approx. `8px` to `12px` - `rounded-lg` or `rounded-xl`). Pill buttons are fully rounded (`rounded-full`).
+    *   **Borders:** Subtle, 1px light-gray borders are used on cards and some filter buttons. The card footer has a `border-t`.
+    *   **Shadows:** Cards and the main header have a very subtle box shadow to lift them off the background (`shadow-sm`).
 
 ### 4) Interaction & Behavior
-*   **Hover States:**
-    *   Navigation links, buttons (`+ Add Employee`, filter pills), and the "View Details" link should have a clear hover state (e.g., slight background color change, underline, or brightness change).
-    *   The entire `EmployeeCard` should likely have a subtle hover effect (e.g., shadow increases, slight lift) to indicate it's clickable.
-    *   The `+` icon on each card should have a hover state, possibly revealing a tooltip explaining its function (e.g., "Add to project").
-*   **Focus States:**
-    *   All interactive elements (links, buttons, inputs) must have a visible focus ring for keyboard accessibility.
-*   **On-Click Behavior:**
-    *   `+ Add Employee`: Opens a modal or navigates to a new page/form.
-    *   `Filter Pills`: Filters the employee grid. Clicking one de-selects the previous and applies the new filter.
-    *   `Employee Card` / `View Details`: Navigates to the detailed profile page for that employee.
-    *   `Additional Filters`: Toggles in the sidebar would refine the grid results. The `X` icon would close this card.
-*   **Input Behavior:**
-    *   The "Search employees..." input should filter the grid results as the user types, likely with a debounce function to avoid excessive re-renders.
+
+*   **Buttons & Links:** All interactive elements (nav links, buttons, `View Details` links) should have clear `:hover` and `:focus` states. A common pattern is a slight background color change or opacity shift for hover, and a visible focus ring (e.g., `focus:ring-2`) for keyboard navigation.
+*   **Filter Pills:** Clicking a pill should filter the employee grid. The active pill has a solid primary blue background and white text; inactive pills have a white/light gray background and dark text.
+*   **Search Input:** Typing in the search bar should filter the grid results, likely with a debounce function to avoid excessive re-renders on every keystroke.
+*   **Employee Card:** The `View Details` links should navigate to an individual employee's profile page. The entire card could also be a clickable link. On hover, the card could scale up slightly (`hover:scale-105`) or its shadow could become more prominent.
+*   **Charts:** The doughnut and bar charts should be interactive. Hovering over a segment or bar should display a tooltip with the exact data point and label.
+*   **Additional Filters Button:** Clicking this should likely open a modal or a dropdown menu with more advanced filtering options.
 
 ### 5) Accessibility Notes
-*   **Labels:** The search input needs an associated `<label>`, which can be visually hidden. Icon-only buttons (search icon, `+` on card, `X` in sidebar) must have an `aria-label` (e.g., `aria-label="Add employee to project"`).
-*   **Contrast:** The secondary grey text (e.g., `@email`) and some of the lighter skill tag color combinations should be checked against WCAG AA contrast ratio standards.
-*   **Semantic HTML:**
-    *   Use `<nav>` for the main navigation.
-    *   The "Team Members" title should be an `<h1>`.
-    *   The employee grid should be a `<ul>` with each card being an `<li>`, or a `<section>` containing a series of `<article>` elements.
-    *   Use `<button>` for all interactive filter pills and icons. Use `<a>` for links that navigate, like "View Details".
-*   **Focus Order:** The DOM order should match the visual flow to ensure a logical tab order: Header -> Page Title -> Add Button -> Search -> Filters -> Employee Cards -> Sidebar.
+
+*   **Contrast:** Double-check the contrast ratio for the muted gray text (e.g., email address) on the white background to ensure it meets WCAG AA standards.
+*   **Labels & ARIA:**
+    *   The search input needs a corresponding `<label>`. It can be visually hidden but must be present for screen readers.
+    *   All icon-only buttons (like the icons inside the search and filter buttons) need an `aria-label` to describe their function (e.g., `aria-label="Search"`).
+*   **Keyboard Navigation:** Ensure a logical focus order. Users should be able to tab through the navigation, then the filters, then into the employee grid (tabbing from one card's interactive elements to the next), and finally to the sidebar.
+*   **Images:** All avatar images must have an `alt` attribute. For real photos, use `alt="Photo of [Employee Name]"`. For initials, the containing element can have `aria-label="[Employee Name]"` or the initials can be wrapped in an `aria-hidden="true"` element with a visually hidden name available to screen readers.
+*   **Data Visualizations:** Charts are inaccessible to screen readers. Provide a fallback, such as a visually hidden data table that represents the chart's data, or use ARIA attributes to describe the chart's contents.
 
 ### 6) Implementation Plan (React + Tailwind)
 
-Here is a concise checklist for component structure:
+This is a concise plan for component structure.
 
--   **`<AppLayout>`**: Main container.
-    -   `div`: `flex flex-col h-screen bg-slate-50`
-    -   Renders `<Header>` and `<TeamDashboardPage>`
+*   **`<AppLayout>`**: The main page wrapper.
+    *   `div className="bg-slate-50"`
+    *   Contains `<Header>` and a `main` element with the two-column layout (`flex` or `grid`).
 
--   **`<Header>`**: Top navigation bar.
-    -   `header`: `bg-white border-b border-slate-200`
-    -   `nav`: `flex justify-between items-center p-4 max-w-7xl mx-auto`
-    -   Contains `<Logo>` and `<NavigationLinks>` components.
+*   **`<Header>`**: The top navigation bar.
+    *   `header className="bg-white shadow-sm border-b border-slate-200"`
+    *   `nav className="container mx-auto flex justify-between items-center p-4"`
 
--   **`<TeamDashboardPage>`**: The main page content.
-    -   `main`: `p-6 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6 max-w-7xl mx-auto`
-    -   Renders `<TeamGridSection>` and `<DashboardSidebar>`.
+*   **`<Button>`**: A reusable button component with variants for `primary` (blue) and `secondary` (white/gray).
+    *   Primary: `bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2`
 
--   **`<TeamGridSection>`**: Left column containing the employee grid.
-    -   `section`: `flex flex-col gap-6`
-    -   **Header**: `div` with `flex justify-between items-start` containing `h1`, `p`, and `<Button variant="primary">`.
-    -   **Filter Bar**: `div` with `flex items-center gap-4` rendering `<SearchInput>` and a map of `<FilterPill>` components.
-    -   **Grid**: `div` with `grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6`. Maps over employee data to render `<EmployeeCard>`.
+*   **`<FilterBar>`**: Container for all filtering controls.
+    *   `div className="flex flex-col gap-4"`
+    *   Contains instances of `<PillButton>` and `<SearchInput>`.
 
--   **`<EmployeeCard>`** `(props: employee)`: The individual employee card.
-    -   `article`: `bg-white rounded-xl shadow-md p-4 border border-slate-200 flex flex-col gap-4 relative`
-    -   **Images**: `div` with `relative`. `<img>` for avatar (`rounded-full w-16 h-16`). A `div` for initials badge, absolutely positioned (`absolute top-0 right-0 ...`).
-    -   **Info**: `div` with `flex flex-col text-center items-center` containing name (`font-bold text-slate-800`), title, and email (`text-sm text-slate-500`).
-    -   **Skills**: `div` with `flex gap-2 justify-center flex-wrap`. Maps over skills to render `<Pill>` components.
-    -   **Divider**: `hr` with `border-slate-200`.
-    -   **Footer**: `div` with `flex justify-between items-center text-sm`. Contains an `<a>` tag (`text-blue-600 font-semibold`) and a `<span>` for status.
+*   **`<PillButton>`**: A reusable pill-style button.
+    *   Accepts an `isActive` prop to toggle styles.
+    *   Inactive: `bg-white border border-slate-300 text-slate-700`
+    *   Active: `bg-blue-600 border-blue-600 text-white`
+    *   Base: `rounded-full px-4 py-1.5 text-sm font-medium`
 
--   **`<DashboardSidebar>`**: Right column with analytics.
-    -   `aside`: `flex flex-col gap-6`
-    -   Renders `<AdditionalFiltersCard>`, `<TeamOverviewCard>`, `<SkillsDemandCard>`, etc. Each of these will be a `div` with the standard card styles (`bg-white rounded-xl ...`).
-    -   Integrate a charting library (e.g., Recharts, Chart.js) for the donut and bar charts.
+*   **`<EmployeeGrid>`**: Renders the list of employees.
+    *   `div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"`
+    *   Maps over an array of employee data to render `<EmployeeCard>`.
+
+*   **`<EmployeeCard>`**: The individual card for an employee.
+    *   **Container**: `div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col"`
+    *   **Header**: `div className="flex items-center gap-4"`
+    *   **Avatar**: `img` or `div` with `w-12 h-12 rounded-full object-cover`
+    *   **Info**: `div` for name (`font-semibold text-slate-800`), role (`text-sm text-slate-500`).
+    *   **Skills/Status Section**: `div className="mt-4 flex flex-col gap-2"`
+    *   **Progress Bar**: A reusable `<ProgressBar>` component taking a `percentage` prop.
+    *   **Footer**: `div className="mt-auto pt-4 border-t border-slate-200 flex justify-between items-center text-sm"`
+
+*   **`<Sidebar>`**: The right-hand column container.
+    *   `aside className="w-full lg:w-[350px] flex-shrink-0 flex flex-col gap-6"`
+
+*   **`<StatCard>`**: Reusable card for the sidebar widgets.
+    *   `div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"`
+    *   Accepts `title` and `children` props to render content like charts or lists.

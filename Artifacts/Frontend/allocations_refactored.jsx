@@ -1,303 +1,364 @@
+javascript
 import React from 'react';
-import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TriangleAlert, LayoutGrid, CircleAlert } from 'lucide-react';
 
-// --- TYPE DEFINITIONS ---
-interface Staff {
-  id: number;
+// ============================================================================
+// TYPE DEFINITIONS & DATA
+// ============================================================================
+
+type Allocation = {
+  project: string;
+  hours?: number;
+  color: 'blue' | 'purple' | 'green' | 'orange' | 'red';
+  hasConflict?: boolean;
+  tooltip?: string;
+};
+
+type TeamMember = {
   name: string;
-  title: string;
+  role: string;
   avatar: string;
   utilization: number;
-}
+  allocations: { [day: string]: Allocation[] };
+};
 
-interface Project {
-  name: string;
-  color: string;
-}
-
-interface Projects {
-  [key: string]: Project;
-}
-
-interface Allocation {
-  id: number;
-  staffId: number;
-  projectId: string;
-  text: string;
-  start: number;
-  span: number;
-  conflict?: boolean;
-  stack?: number;
-}
-
-
-// --- DATA MOCKS ---
-const staffData: Staff[] = [
-  { id: 1, name: 'Sarah Chen', title: 'Senior Developer', avatar: 'https://i.pravatar.cc/150?u=sarahchen', utilization: 92 },
-  { id: 2, name: 'David Smith', title: 'UI Designer', avatar: 'https://i.pravatar.cc/150?u=davidsmith', utilization: 78 },
-  { id: 3, name: 'Maria Rodriguez', title: 'Project Manager', avatar: 'https://i.pravatar.cc/150?u=mariarodriguez', utilization: 65 },
-  { id: 4, name: 'John Doe', title: 'Senior Developer', avatar: 'https://i.pravatar.cc/150?u=johndoe', utilization: 65 },
-  { id: 5, name: 'Aisha Khan', title: 'Project Manager', avatar: 'https://i.pravatar.cc/150?u=aishakhan', utilization: 50 },
-  { id: 6, name: 'Michael Lee', title: 'Project Manager', avatar: 'https://i.pravatar.cc/150?u=michaellee', utilization: 110 },
+const weekDays = [
+  { day: "Mon", date: 4 },
+  { day: "Tue", date: 5 },
+  { day: "Wed", date: 6 },
+  { day: "Thu", date: 7 },
+  { day: "Sat", date: 9 },
+  { day: "Sun", date: 10 },
 ];
 
-const projects: Projects = {
-  'PROJ-001': { name: 'Blue', color: 'bg-blue-500' },
-  'PROJ-002': { name: 'Purple', color: 'bg-purple-500' },
-  'PROJ-003': { name: 'Green', color: 'bg-green-500' },
-  'PROJ-004': { name: 'Orange', color: 'bg-orange-500' },
-};
-
-const allocations: Allocation[] = [
-  { id: 1, staffId: 1, projectId: 'PROJ-001', text: 'PROJ-001 (8h)', start: 1, span: 2 },
-  { id: 2, staffId: 1, projectId: 'PROJ-002', text: 'PROJ-002 (8h)', start: 3, span: 4 },
-  { id: 3, staffId: 1, projectId: 'PROJ-001', text: 'PROJ-001 (8h)', start: 7, span: 1 },
-  { id: 4, staffId: 2, projectId: 'PROJ-002', text: 'PROJ-002 (8h)', start: 1, span: 2 },
-  { id: 5, staffId: 2, projectId: 'PROJ-003', text: 'PROJ-003 (8h)', start: 5, span: 3 },
-  { id: 6, staffId: 3, projectId: 'PROJ-002', text: 'PROJ-002 (8h)', start: 3, span: 5 },
-  { id: 7, staffId: 3, projectId: 'PROJ-004', text: 'PROJ-004 (8h)', start: 1, span: 2 },
-  { id: 8, staffId: 4, projectId: 'PROJ-002', text: 'PROJ-002 (8h)', start: 1, span: 2 },
-  { id: 9, staffId: 4, projectId: 'PROJ-002', text: 'PROJ-002 (8h)', start: 4, span: 2 },
-  { id: 10, staffId: 4, projectId: 'PROJ-002', text: 'PROJ-002 (8h)', start: 7, span: 1 },
-  { id: 11, staffId: 5, projectId: 'PROJ-001', text: 'PROJ-001 (8h)', start: 1, span: 1, conflict: false, stack: 1 },
-  { id: 12, staffId: 5, projectId: 'PROJ-001', text: 'PROJ-001 (8h)', start: 1, span: 1, conflict: false, stack: 2 },
-  { id: 13, staffId: 5, projectId: 'PROJ-002', text: 'PROJ-002 (8h)', start: 2, span: 1, conflict: false, stack: 1 },
-  { id: 14, staffId: 5, projectId: 'PROJ-002', text: 'PROJ-002 (4h)', start: 3, span: 1, conflict: true, stack: 1 },
-  { id: 15, staffId: 5, projectId: 'PROJ-001', text: 'PROJ-001 (8h)', start: 3, span: 1, conflict: false, stack: 2 },
-  { id: 16, staffId: 5, projectId: 'PROJ-001', text: 'PROJ-001 (4h)', start: 4, span: 1, conflict: true, stack: 1 },
-  { id: 17, staffId: 6, projectId: 'PROJ-003', text: 'PROJ-003 (4h)', start: 1, span: 1 },
+const teamData: TeamMember[] = [
+  {
+    name: 'John Smith',
+    role: 'Senior Developer',
+    avatar: 'https://i.pravatar.cc/150?u=johnsmith',
+    utilization: 95,
+    allocations: {
+      'Tue 5': [
+        { project: 'PROJ-001 (8h)', color: 'blue' },
+        { project: 'PROJ-093 (0h)', color: 'purple' },
+        { project: 'PROJ-083 (4h)', color: 'purple' },
+      ],
+      'Wed 6': [],
+      'Thu 7': [{ project: 'PROJ-001 (8h)', color: 'blue', hasConflict: true }],
+      'Sat 9': [{ project: 'PROJ-001', color: 'green' }],
+      'Sun 10': [{ project: 'PROJ-001 (8h)', color: 'red' }],
+    },
+  },
+  {
+    name: 'Jane Doe',
+    role: 'UI Designer',
+    avatar: 'https://i.pravatar.cc/150?u=janedoe1',
+    utilization: 80,
+    allocations: {
+      'Thu 7': [{ project: 'PROJ-02', color: 'green' }],
+      'Sat 9': [{ project: 'PROJ-00h', color: 'green' }],
+      'Sun 10': [{ project: 'Fri', color: 'orange' }],
+    },
+  },
+  {
+    name: 'Jane Doe',
+    role: 'UI Designer',
+    avatar: 'https://i.pravatar.cc/150?u=janedoe2',
+    utilization: 75,
+    allocations: {
+      'Sun 10': [{ project: 'ADMIN (4h)', color: 'red' }],
+    },
+  },
+  {
+    name: 'Michael Chen',
+    role: 'Project Manager',
+    avatar: 'https://i.pravatar.cc/150?u=michaelchen1',
+    utilization: 0,
+    allocations: {
+      'Sat 9': [{ project: 'PROJ-022', color: 'green' }],
+      'Sun 10': [{ project: 'PROJ-00h)', color: 'orange' }],
+    },
+  },
+  {
+    name: 'Sarah Lee',
+    role: 'Data Analyst',
+    avatar: 'https://i.pravatar.cc/150?u=sarahlee1',
+    utilization: 60,
+    allocations: {
+      'Thu 7': [{ project: 'PROJ-001 (8h)', color: 'purple' }],
+      'Sat 9': [{ project: 'PROJ-001 (4h)', color: 'green' }],
+      'Sun 10': [{ project: 'ADMIN (4h)', color: 'orange' }],
+    },
+  },
+  {
+    name: 'Michael Chen',
+    role: 'Drota Analyst',
+    avatar: 'https://i.pravatar.cc/150?u=michaelchen2',
+    utilization: 0,
+    allocations: {
+      'Wed 6': [{ project: 'PROJ-0', color: 'purple', tooltip: 'Conflict: John Smith is allocated for 12 on PROJ-001 and PROJ-031 (8h)' }],
+      'Sun 10': [{ project: '8h', color: 'orange' }],
+    },
+  },
+  {
+    name: 'Sarah Lee',
+    role: 'UI Designer',
+    avatar: 'https://i.pravatar.cc/150?u=sarahlee2',
+    utilization: 0,
+    allocations: {
+      'Wed 6': [{ project: 'PROJ-002 (8h)', color: 'purple' }],
+      'Thu 7': [{ project: '8h', color: 'orange' }],
+    },
+  },
+  {
+    name: 'David Rodriguez',
+    role: 'Senior Developer',
+    avatar: 'https://i.pravatar.cc/150?u=davidrodriguez',
+    utilization: 0,
+    allocations: {},
+  },
+  {
+    name: 'Emily White',
+    role: 'UI Designer',
+    avatar: 'https://i.pravatar.cc/150?u=emilywhite',
+    utilization: 40,
+    allocations: {},
+  },
+  {
+    name: 'Emily White',
+    role: 'Data Analyst',
+    avatar: 'https://i.pravatar.cc/150?u=emilywhite2',
+    utilization: 0,
+    allocations: {},
+  },
+  {
+    name: 'Alex Turner',
+    role: '',
+    avatar: 'https://i.pravatar.cc/150?u=alexturner',
+    utilization: 0,
+    allocations: {},
+  },
 ];
 
+// ============================================================================
+// HELPER COMPONENTS & UTILS
+// ============================================================================
 
-// --- ATOMIC & REUSABLE COMPONENTS ---
-
-const UtilizationBadge = ({ value }: { value: number }) => {
-  const colorClasses =
-    value > 100 ? 'bg-red-100 text-red-700'
-    : value >= 90 ? 'bg-red-100 text-red-700'
-    : value > 70 ? 'bg-green-100 text-green-700'
-    : value > 50 ? 'bg-yellow-100 text-yellow-600'
-    : 'bg-yellow-100 text-yellow-600';
-  
-  return (
-    <div className={`ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${colorClasses}`}>
-      {value}%
-    </div>
-  );
+const getAllocationColor = (color: Allocation['color']) => {
+  const colorMap = {
+    blue: 'bg-blue-500',
+    purple: 'bg-purple-500',
+    green: 'bg-green-500',
+    orange: 'bg-orange-500',
+    red: 'bg-red-500',
+  };
+  return colorMap[color];
 };
 
-const AbsoluteAllocationBar = ({ allocation, project, rowIndex }: { allocation: Allocation, project: Project, rowIndex: number }) => (
-  <div
-    className={`${project.color} absolute flex cursor-pointer items-center rounded px-2 py-1 text-xs text-white shadow-sm`}
-    style={{
-      top: `${rowIndex * 72 + 8}px`,
-      left: `calc(${(allocation.start - 1) * (100 / 7)}% + 4px)`,
-      width: `calc(${allocation.span * (100 / 7)}% - 8px)`,
-      height: '28px',
-    }}
-  >
-    {allocation.text}
-  </div>
-);
+interface AllocationBarProps {
+  allocation: Allocation;
+}
 
-const StackedAllocationItem = ({ allocation, project }: { allocation: Allocation, project: Project }) => (
-  <div className={`${project.color} flex cursor-pointer items-center justify-between rounded px-2 py-0.5 text-xs text-white`}>
-    <span>{allocation.text}</span>
-    {allocation.conflict && <AlertTriangle className="h-3 w-3 fill-white text-red-700" />}
-  </div>
-);
-
-
-// --- LAYOUT & SECTION COMPONENTS ---
-
-const AppHeader = () => {
-  const navItems = ['Dashboard', 'Projects', 'Clients', 'Reports', 'Settings'];
-  return (
-    <header className="bg-slate-800">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <div className="text-xl font-bold text-white">StaffAlloc</div>
-        <nav>
-          <ul className="flex items-center space-x-6 text-sm font-medium text-slate-300">
-            {navItems.map((item) => (
-              <li key={item}>
-                <a
-                  href="#"
-                  className={`transition-colors hover:text-white ${
-                    item === 'Dashboard' ? 'relative text-white after:absolute after:-bottom-3 after:left-0 after:h-0.5 after:w-full after:bg-blue-500' : ''
-                  }`}
-                >
-                  {item}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-    </header>
-  );
-};
-
-const PageHeader = () => (
-  <div className="flex flex-wrap items-center justify-between gap-4">
-    <h1 className="text-3xl font-bold text-slate-900">Team Allocations</h1>
-    <div className="flex flex-wrap items-center gap-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-        <button aria-label="Previous month" className="p-1.5 hover:text-slate-900">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <span>November 2025</span>
-        <button aria-label="Next month" className="p-1.5 hover:text-slate-900">
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-      <div className="flex rounded-md border border-slate-300 bg-slate-200 p-0.5 text-sm">
-        <button className="rounded-[5px] px-3 py-1">Week</button>
-        <button className="rounded-[5px] bg-white px-3 py-1 text-blue-600 shadow-sm">Month</button>
-      </div>
-      <div className="flex items-center gap-2">
-        <button className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
-          Export Schedule
-        </button>
-        <button className="rounded-md border border-blue-600 bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-600">
-          Adjust Allocations
-        </button>
-      </div>
+const AllocationBar: React.FC<AllocationBarProps> = ({ allocation }) => (
+  <div className="relative">
+    <div className={`text-white text-xs font-semibold p-1.5 rounded-md mb-1 ${getAllocationColor(allocation.color)}`}>
+      {allocation.project}
     </div>
+    {allocation.hasConflict && <TriangleAlert className="w-4 h-4 text-red-500 absolute -bottom-1 -right-2 bg-white rounded-full p-0.5" />}
+    {allocation.tooltip && (
+      <div className="absolute left-[50%] top-[90%] w-max max-w-xs bg-white p-3 rounded-lg shadow-2xl text-sm z-20 border border-gray-100">
+        <p className="font-semibold text-gray-800">Conflict</p>
+        <p className="text-gray-600">{allocation.tooltip}</p>
+      </div>
+    )}
   </div>
 );
 
-const StaffList = ({ staffList }: { staffList: Staff[] }) => (
-  <div className="flex flex-col gap-2 pt-11">
-    {staffList.map((staff) => (
-      <div key={staff.id} className="flex h-[72px] items-center gap-3 pr-4">
-        <img src={staff.avatar} alt={staff.name} className="h-12 w-12 rounded-full" />
-        <div>
-          <div className="font-semibold text-slate-900">{staff.name}</div>
-          <div className="text-sm text-slate-500">{staff.title}</div>
-        </div>
-        <UtilizationBadge value={staff.utilization} />
-      </div>
+interface CalendarCellProps {
+  allocations: Allocation[];
+}
+
+const CalendarCell: React.FC<CalendarCellProps> = ({ allocations }) => (
+  <div className="p-1.5 border-b border-l border-gray-200 min-h-[72px] align-top relative">
+    {allocations.map((alloc, index) => (
+      <AllocationBar key={index} allocation={alloc} />
     ))}
   </div>
 );
 
-const TimelineHeader = () => (
-    <div className="grid grid-cols-7 border-b border-slate-200">
-        <div className="py-2 text-center text-sm font-medium text-slate-600">Mon 4</div>
-        <div className="py-2 text-center text-sm font-medium text-slate-600"></div>
-        <div className="py-2 text-center text-sm font-medium text-slate-600">Wed 6</div>
-        <div className="py-2 text-center text-sm font-medium text-slate-600"></div>
-        <div className="py-2 text-center text-sm font-medium text-slate-600">Fri 8</div>
-        <div className="py-2 text-center text-sm font-medium text-slate-600"></div>
-        <div className="py-2 text-center text-sm font-medium text-slate-600">Sun 10</div>
-    </div>
-);
+const getUtilizationClasses = (percentage: number) => {
+  if (percentage >= 90) return 'border-red-400 text-red-500 bg-red-50';
+  if (percentage >= 70) return 'border-green-400 text-green-600 bg-green-50';
+  if (percentage > 0) return 'border-orange-400 text-orange-500 bg-orange-50';
+  return 'border-gray-300 text-gray-400';
+};
 
-const TimelineGrid = ({ staffList, allocations, projects }: { staffList: Staff[], allocations: Allocation[], projects: Projects }) => {
-  // Memoize the staff index lookup for performance
-  const staffIndexMap = React.useMemo(() => 
-    new Map(staffList.map((staff, index) => [staff.id, index])), 
-    [staffList]
-  );
-  
+interface UtilizationBadgeProps {
+  utilization: number;
+}
+
+const UtilizationBadge: React.FC<UtilizationBadgeProps> = ({ utilization }) => {
+  if (utilization <= 0) return null;
   return (
-    <div className="overflow-x-auto">
-      <TimelineHeader />
-      <div className="relative">
-        {/* Render grid rows and stacked allocations */}
-        {staffList.map((staff) => (
-          <div
-            key={staff.id}
-            className={`grid h-[72px] grid-cols-7 border-t border-slate-200 ${staff.id === 5 ? 'ring-2 ring-inset ring-red-400' : ''}`}
-          >
-            {[...Array(7)].map((_, dayIndex) => (
-              <div
-                key={dayIndex}
-                className={`border-l border-slate-200 ${dayIndex === 0 ? 'border-l-0' : ''} ${staff.id === 5 ? 'relative space-y-1 p-1' : 'relative p-2'}`}
-              >
-                {/* Special handling for stacked/conflicting allocations */}
-                {staff.id === 5 && allocations
-                  .filter(a => a.staffId === staff.id && a.start === dayIndex + 1)
-                  .map(alloc => (
-                    <StackedAllocationItem key={alloc.id} allocation={alloc} project={projects[alloc.projectId]} />
-                  ))
-                }
-              </div>
-            ))}
-          </div>
-        ))}
-        {/* Render absolutely positioned allocations over the grid */}
-        {allocations
-          .filter(a => a.staffId !== 5) // Render only non-stacked allocations
-          .map(alloc => {
-            const rowIndex = staffIndexMap.get(alloc.staffId);
-            if (rowIndex === undefined) return null;
-            return (
-              <AbsoluteAllocationBar 
-                key={alloc.id} 
-                allocation={alloc} 
-                project={projects[alloc.projectId]} 
-                rowIndex={rowIndex} 
-              />
-            );
-          })
-        }
-      </div>
+    <div className={`w-9 h-9 flex-shrink-0 rounded-full border-2 flex items-center justify-center text-xs font-bold ${getUtilizationClasses(utilization)}`}>
+      {utilization}%
     </div>
   );
 };
 
-const InfoSidebar = ({ projects }: { projects: Projects }) => (
-  <div className="border-l border-slate-200 pl-6 pt-11">
-    <div className="space-y-6">
-      <div>
-        <h3 className="font-semibold text-slate-900">Week Overview</h3>
-        <div className="mt-2 space-y-1 text-sm text-slate-600">
-          <p>Total team hours: 320h</p>
-          <p>Average utilization: 78%</p>
-          <div className="flex items-center gap-2 pt-2 text-red-600">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white">
-              <AlertTriangle className="h-4 w-4" />
-            </span>
-            <span className="font-semibold">2 conflicts detected</span>
+interface EmployeeInfoProps {
+  member: TeamMember;
+}
+
+const EmployeeInfo: React.FC<EmployeeInfoProps> = ({ member }) => (
+  <div className="sticky left-0 bg-white p-3 border-b border-gray-200 z-10 flex items-center gap-3">
+    <img src={member.avatar} alt={member.name} className="w-10 h-10 rounded-full" />
+    <div className="flex-grow">
+      <p className="font-semibold text-gray-800">{member.name}</p>
+      <p className="text-xs text-gray-500">{member.role}</p>
+    </div>
+    <UtilizationBadge utilization={member.utilization} />
+  </div>
+);
+
+interface GridHeaderProps {
+  days: typeof weekDays;
+}
+
+const GridHeader: React.FC<GridHeaderProps> = ({ days }) => (
+  <>
+    <div className="sticky top-0 left-0 bg-white z-20"></div> {/* Corner */}
+    <div className="sticky top-0 col-span-6 bg-white z-10">
+      <div className="grid grid-cols-6">
+        {days.map((day, index) => (
+          <div key={index} className="p-3 text-sm font-medium text-gray-500 bg-slate-50 text-left border-b border-l border-gray-200">
+            {day.day} <span className="text-gray-400">{day.date}</span>
           </div>
-        </div>
+        ))}
       </div>
-      <div>
-        <h3 className="font-semibold text-slate-900">Project Legend</h3>
-        <ul className="mt-2 space-y-2 text-sm text-slate-600">
-          {Object.entries(projects).map(([id, project]) => (
-             id !== 'PROJ-004' && <li key={id} className="flex items-center gap-2">
-              <span className={`h-3 w-3 rounded-sm ${project.color}`}></span>
-              {`${id} (${project.name})`}
-            </li>
-          ))}
-          {/* Manual correction for data inconsistency */}
-           <li className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-sm bg-green-500"></span>
-              PROJ-001 (Orange)
-            </li>
-        </ul>
+    </div>
+  </>
+);
+
+interface AllocationsGridProps {
+  team: TeamMember[];
+  days: typeof weekDays;
+}
+
+const AllocationsGrid: React.FC<AllocationsGridProps> = ({ team, days }) => (
+  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="overflow-x-auto relative">
+      <div className="grid" style={{ gridTemplateColumns: '260px repeat(6, 1fr)' }}>
+        <GridHeader days={days} />
+        {team.map((member, memberIndex) => (
+          <React.Fragment key={member.name + memberIndex}>
+            <EmployeeInfo member={member} />
+            {days.map((day, dayIndex) => {
+              const dayKey = `${day.day} ${day.date}`;
+              const dailyAllocations = member.allocations[dayKey] || [];
+              return <CalendarCell key={dayIndex} allocations={dailyAllocations} />;
+            })}
+          </React.Fragment>
+        ))}
       </div>
     </div>
   </div>
 );
 
+// ============================================================================
+// LAYOUT COMPONENTS
+// ============================================================================
 
-// --- MAIN COMPONENT ---
+const AppHeader: React.FC = () => (
+  <header className="bg-white shadow-sm sticky top-0 z-30">
+    <nav className="max-w-screen-2xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <LayoutGrid className="w-7 h-7 text-blue-600" />
+        <span className="font-bold text-xl text-gray-800">StaffAlloc</span>
+      </div>
+      <div className="flex items-center gap-8 text-sm font-medium text-gray-600">
+        <a href="#" className="hover:text-blue-600">Dashboard</a>
+        <a href="#" className="text-blue-600 border-b-2 border-blue-600 pb-1">Projects</a>
+        <a href="#" className="hover:text-blue-600">Team</a>
+        <a href="#" className="hover:text-blue-600">Reports</a>
+        <a href="#" className="hover:text-blue-600">Settings</a>
+      </div>
+    </nav>
+  </header>
+);
+
+const AllocationsHeader: React.FC = () => (
+  <section className="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center mb-6">
+    <h1 className="text-2xl font-bold text-gray-800">Team Allocations</h1>
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <button className="p-2 rounded-md hover:bg-gray-100" aria-label="Previous month">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <span>November 2025</span>
+        <button className="p-2 rounded-md hover:bg-gray-100" aria-label="Next month">
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="bg-gray-100 p-1 rounded-lg flex text-sm">
+        <button className="py-1 px-4 rounded-md bg-white text-blue-600 shadow-sm font-semibold">Week</button>
+        <button className="py-1 px-4 rounded-md text-gray-500 font-medium">Month</button>
+      </div>
+      <button className="text-sm font-semibold bg-blue-600 text-white py-2 px-4 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        Export Schedule
+      </button>
+      <button className="text-sm font-semibold bg-white text-gray-700 py-2 px-4 rounded-lg border border-gray-300 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+        Adjust Allocations
+      </button>
+    </div>
+  </section>
+);
+
+const WeekOverviewSidebar: React.FC = () => (
+  <aside className="space-y-6">
+    <div className="bg-white p-6 rounded-lg shadow-sm">
+      <h3 className="text-lg font-bold text-gray-800 mb-4">Week Overview</h3>
+      <div className="space-y-3 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-600">Total Team Hours:</span>
+          <span className="font-semibold text-gray-800">320h</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">Average Utilization:</span>
+          <span className="font-semibold text-gray-800">78%</span>
+        </div>
+        <div className="flex items-center gap-2 text-red-600 font-semibold pt-2">
+          <CircleAlert className="w-5 h-5"/>
+          <span>2 conflicts detected</span>
+        </div>
+      </div>
+      <div className="mt-6 pt-4 border-t border-gray-200 space-y-3">
+        <div className="flex items-center gap-3 text-sm">
+          <div className="w-4 h-4 rounded bg-blue-500"></div>
+          <span className="text-gray-600">PROJ-001</span>
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <div className="w-4 h-4 rounded bg-orange-500"></div>
+          <span className="text-gray-600">PROJ-004 / ADMIN</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+);
+
+// ============================================================================
+// MAIN PAGE COMPONENT
+// ============================================================================
 
 export default function TeamAllocations() {
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
+    <div className="bg-slate-50 min-h-screen font-sans text-gray-900">
       <AppHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <PageHeader />
-        <div className="mt-6 overflow-hidden rounded-lg bg-white p-6 shadow-md">
-          <div className="grid grid-cols-[250px_1fr_220px] gap-6">
-            <StaffList staffList={staffData} />
-            <TimelineGrid staffList={staffData} allocations={allocations} projects={projects} />
-            <InfoSidebar projects={projects} />
-          </div>
+      <main className="max-w-screen-2xl mx-auto p-6">
+        <AllocationsHeader />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
+          <AllocationsGrid team={teamData} days={weekDays} />
+          <WeekOverviewSidebar />
         </div>
       </main>
     </div>
