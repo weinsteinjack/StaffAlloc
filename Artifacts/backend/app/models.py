@@ -31,7 +31,6 @@ class Base(DeclarativeBase):
 
 class SystemRole(str, enum.Enum):
     ADMIN = "Admin"
-    DIRECTOR = "Director"
     PM = "PM"
     EMPLOYEE = "Employee"
 
@@ -87,6 +86,12 @@ class User(Base):
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now(), onupdate=func.now()
     )
+    manager_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # --- Relationships ---
     managed_projects: Mapped[List["Project"]] = relationship(
@@ -101,6 +106,27 @@ class User(Base):
     audit_logs: Mapped[List["AuditLog"]] = relationship(
         "AuditLog", back_populates="user"
     )
+    manager: Mapped[Optional["User"]] = relationship(
+        "User",
+        remote_side=[id],
+        back_populates="managed_employees",
+        foreign_keys=[manager_id],
+    )
+    managed_employees: Mapped[List["User"]] = relationship(
+        "User",
+        back_populates="manager",
+        foreign_keys="User.manager_id",
+    )
+    owned_roles: Mapped[List["Role"]] = relationship(
+        "Role",
+        back_populates="owner",
+        foreign_keys="Role.owner_id",
+    )
+    owned_lcats: Mapped[List["LCAT"]] = relationship(
+        "LCAT",
+        back_populates="owner",
+        foreign_keys="LCAT.owner_id",
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email='{self.email}', role='{self.system_role.value}')>"
@@ -112,8 +138,14 @@ class Role(Base):
     __tablename__ = "roles"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    owner_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now()
     )
@@ -124,6 +156,15 @@ class Role(Base):
     # --- Relationships ---
     assignments: Mapped[List["ProjectAssignment"]] = relationship(
         "ProjectAssignment", back_populates="role"
+    )
+    owner: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="owned_roles",
+        foreign_keys=[owner_id],
+    )
+
+    __table_args__ = (
+        UniqueConstraint("owner_id", "name", name="uq_roles_owner_name"),
     )
 
     def __repr__(self) -> str:
@@ -136,8 +177,14 @@ class LCAT(Base):
     __tablename__ = "lcats"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    owner_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now()
     )
@@ -148,6 +195,15 @@ class LCAT(Base):
     # --- Relationships ---
     assignments: Mapped[List["ProjectAssignment"]] = relationship(
         "ProjectAssignment", back_populates="lcat"
+    )
+    owner: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="owned_lcats",
+        foreign_keys=[owner_id],
+    )
+
+    __table_args__ = (
+        UniqueConstraint("owner_id", "name", name="uq_lcats_owner_name"),
     )
 
     def __repr__(self) -> str:
@@ -161,7 +217,7 @@ class Project(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    code: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(String, nullable=False)
     client: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     start_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     sprints: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -195,7 +251,10 @@ class Project(Base):
         passive_deletes=True,
     )
 
-    __table_args__ = (CheckConstraint("sprints > 0", name="ck_project_sprints_positive"),)
+    __table_args__ = (
+        CheckConstraint("sprints > 0", name="ck_project_sprints_positive"),
+        UniqueConstraint("manager_id", "code", name="uq_projects_manager_code"),
+    )
 
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, code='{self.code}', name='{self.name}')>"
@@ -290,6 +349,10 @@ class Allocation(Base):
             "allocated_hours >= 0", name="ck_allocation_hours_nonnegative"
         ),
         Index("idx_allocations_year_month", "year", "month"),
+        Index(
+            "idx_allocations_assignment",
+            "project_assignment_id",
+        ),
     )
 
     def __repr__(self) -> str:

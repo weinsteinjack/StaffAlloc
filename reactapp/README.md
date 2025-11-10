@@ -22,7 +22,16 @@ This package contains the React + Vite frontend for the Staff Allocation project
    npm install
    ```
 
-The command reads `package.json` and installs all runtime and development dependencies, including React, Vite, Tailwind, and form utilities.
+The command reads `package.json` and installs all runtime and development dependencies, including React, Vite, Tailwind, testing utilities, and animation libraries.
+
+## Key Features
+
+- **Portfolio command center:** Rich dashboards (`/dashboard`) with utilization charts, project health metrics, and Excel export hooks.
+- **Project staffing workspace:** Spreadsheet-like allocation grid, monthly overrides, and AI assistance for each project.
+- **Teams & timelines:** Directory view with role filters plus `/teams/:id` timeline pages for cross-project availability.
+- **AI experiences:** Conversational RAG chat (`/ai/chat`) with presets, maintenance tools, and an AI recommendations hub (`/ai/recommendations`).
+- **Admin taxonomy:** Role and LCAT management workspace with create/update/delete flows backed by the `/admin` API.
+- **Prototype authentication:** Managers and directors sign in to see their assigned projects while admins retain global access.
 
 ## Running the App Locally
 
@@ -69,11 +78,24 @@ When `VITE_API_BASE_URL` is unset, the proxy falls back to `http://localhost:800
   ```
   Executes ESLint across `.ts` and `.tsx` files.
 
+- **Execute unit tests:**
+  ```bash
+  npm run test
+  ```
+  Runs the Vitest suite (JS DOM environment) with React Testing Library and saves coverage reports under `coverage/`.
+
+## Authentication
+
+- Navigate to `/login`, enter a manager or director email from the Employees directory, and supply any password (password verification will be enforced when the backend auth endpoints ship).
+- Project Managers automatically see only the projects where they are listed as `manager_id`; Directors and Admins see the full portfolio.
+- Use the avatar menu in the main layout to sign out and clear the local session.
+
 ## Troubleshooting
 
 - **Port already in use:** Pass `--port <number>` to `npm run dev` or terminate the conflicting process.
 - **API calls fail:** Verify the backend is running, and confirm `VITE_API_BASE_URL` matches the backend URL.
 - **Dependency errors:** Ensure `npm install` completes without errors, then restart the dev server.
+- **Tests hang in PowerShell:** Use `cmd /c npm run test` to avoid execution policy prompts or interactive confirmations.
 
 For additional backend setup instructions, refer to the documentation in `Artifacts/backend/`.
 

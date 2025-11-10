@@ -2,19 +2,32 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 
-import { createProject, fetchProjects } from '../api/projects';
+import { createProject, deleteProject, fetchProjects, importProjectsFromExcel } from '../api/projects';
+import ImportProjectsModal from '../components/projects/ImportProjectsModal';
 import CreateProjectModal from '../components/projects/CreateProjectModal';
+import DeleteProjectModal from '../components/projects/DeleteProjectModal';
 import ProjectTable from '../components/projects/ProjectTable';
-import type { ProjectCreateInput } from '../types/api';
+import { useAuth } from '../context/AuthContext';
+import type { ProjectCreateInput, ProjectListItem } from '../types/api';
 
 export default function ProjectsPage() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isImportOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSummary, setImportSummary] = useState<{ created: number; skipped: number } | null>(null);
+  const [isImporting, setImporting] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<ProjectListItem | null>(null);
 
   const { data: projects = [], isLoading, isError, error } = useQuery({
-    queryKey: ['projects'],
-    queryFn: fetchProjects
+    queryKey: ['projects', user?.id],
+    queryFn: () => {
+      if (!user?.id) return Promise.resolve([]);
+      return fetchProjects({ managerId: user.id });
+    },
+    enabled: !!user?.id
   });
 
   const {
@@ -29,6 +42,17 @@ export default function ProjectsPage() {
     }
   });
 
+  const {
+    mutate: handleDeleteProject,
+    isPending: isDeleting
+  } = useMutation({
+    mutationFn: (projectId: number) => deleteProject(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setDeletingProject(null);
+    }
+  });
+
   const filteredProjects = projects.filter((project) => {
     if (!search.trim()) return true;
     const query = search.toLowerCase();
@@ -39,6 +63,8 @@ export default function ProjectsPage() {
     );
   });
 
+  const visibleProjects = filteredProjects;
+
   const createErrorMessage = createError instanceof Error ? createError.message : null;
 
   return (
@@ -48,6 +74,7 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
           <p className="mt-1 text-sm text-slate-500">
             Manage project staffing plans, allocations, and health in one place.
+            {user?.system_role === 'PM' && ' Showing projects assigned to you.'}
           </p>
         </div>
         <button
@@ -57,6 +84,17 @@ export default function ProjectsPage() {
         >
           <Plus className="h-4 w-4" />
           Create Project
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setImportError(null);
+            setImportSummary(null);
+            setImportOpen(true);
+          }}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
+        >
+          Import from Excel
         </button>
       </header>
 
@@ -89,14 +127,83 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {!isLoading && !isError && <ProjectTable projects={filteredProjects} />}
+      {!isLoading && !isError && (
+        <>
+          {user?.system_role === 'PM' && visibleProjects.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white py-16 text-center text-sm text-slate-500">
+              You are not assigned to any projects yet. Ask your administrator to add you as the project manager.
+            </div>
+          ) : (
+            <ProjectTable 
+              projects={visibleProjects} 
+              onDeleteProject={(project) => setDeletingProject(project)}
+            />
+          )}
+        </>
+      )}
 
       <CreateProjectModal
         open={isModalOpen}
         submitting={isCreating}
         error={createErrorMessage}
-        onSubmit={handleCreateProject}
+        onSubmit={(values) =>
+          handleCreateProject({
+            ...values,
+            manager_id: user?.system_role === 'PM' ? user.id : values.manager_id
+          })
+        }
         onClose={() => setModalOpen(false)}
+      />
+
+      <ImportProjectsModal
+        open={isImportOpen}
+        submitting={isImporting}
+        error={importError}
+        onSubmit={async (file) => {
+          try {
+            setImportError(null);
+            setImportSummary(null);
+            setImporting(true);
+            const response = await importProjectsFromExcel(file, user?.system_role === 'PM' ? user.id : undefined);
+            setImportSummary({ created: response.created_projects.length, skipped: response.skipped_codes.length });
+            setImportOpen(false);
+            await queryClient.invalidateQueries({ queryKey: ['projects'] });
+          } catch (uploadError) {
+            if (uploadError instanceof Error) {
+              setImportError(uploadError.message);
+            } else {
+              setImportError('Unable to import projects. Please try again.');
+            }
+          }
+          finally {
+            setImporting(false);
+          }
+        }}
+        onClose={() => {
+          setImportOpen(false);
+          setImportError(null);
+          setImporting(false);
+        }}
+      />
+
+      {importSummary && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          Imported {importSummary.created} project{importSummary.created === 1 ? '' : 's'}. {importSummary.skipped > 0 && (
+            <span>Skipped {importSummary.skipped} existing code{importSummary.skipped === 1 ? '' : 's'}.</span>
+          )}
+        </div>
+      )}
+
+      <DeleteProjectModal
+        open={!!deletingProject}
+        projectName={deletingProject?.name ?? ''}
+        submitting={isDeleting}
+        onConfirm={() => {
+          if (deletingProject) {
+            handleDeleteProject(deletingProject.id);
+          }
+        }}
+        onClose={() => setDeletingProject(null)}
       />
     </div>
   );

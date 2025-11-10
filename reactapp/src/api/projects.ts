@@ -5,18 +5,53 @@ import type {
   Project,
   ProjectAssignment,
   ProjectCreateInput,
+  ProjectImportResponse,
   ProjectListItem,
+  ProjectUpdateInput,
   ProjectWithDetails
 } from '../types/api';
 import { fetchAssignmentAllocations } from './assignments';
 
-export async function fetchProjects(): Promise<ProjectListItem[]> {
-  const { data } = await api.get<ProjectListItem[]>('/projects');
+export interface ProjectQueryParams {
+  managerId: number; // Required for data isolation
+}
+
+export async function fetchProjects(params: ProjectQueryParams): Promise<ProjectListItem[]> {
+  const { managerId } = params;
+  const { data } = await api.get<ProjectListItem[]>('/projects', {
+    params: {
+      manager_id: managerId
+    }
+  });
   return data;
 }
 
 export async function createProject(payload: ProjectCreateInput): Promise<Project> {
   const { data } = await api.post<Project>('/projects', payload);
+  return data;
+}
+
+export async function updateProject(
+  projectId: number,
+  payload: ProjectUpdateInput
+): Promise<Project> {
+  const { data } = await api.put<Project>(`/projects/${projectId}`, payload);
+  return data;
+}
+
+export async function importProjectsFromExcel(
+  file: File,
+  managerId?: number
+): Promise<ProjectImportResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (managerId) {
+    formData.append('manager_id', String(managerId));
+  }
+
+  const { data } = await api.post<ProjectImportResponse>('/projects/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
   return data;
 }
 
@@ -52,5 +87,9 @@ export async function updateMonthlyHourOverride(
 
 export async function deleteMonthlyHourOverride(overrideId: number): Promise<void> {
   await api.delete(`/projects/overrides/${overrideId}`);
+}
+
+export async function deleteProject(projectId: number): Promise<void> {
+  await api.delete(`/projects/${projectId}`);
 }
 

@@ -9,7 +9,7 @@ This module provides RESTful endpoints for managing users/employees, including:
 Supports the employee management aspects of the PRD.
 """
 import logging
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.core import security
 from app.db.session import get_db
+from app.models import SystemRole
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +49,16 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    
+
+    if user.system_role == SystemRole.EMPLOYEE and not user.manager_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Employee accounts must specify a manager_id.",
+        )
+
     # Hash the password before storing
     hashed_password = security.get_password_hash(user.password)
-    
+
     created_user = crud.create_user(db=db, user=user, password_hash=hashed_password)
     logger.info(f"User created successfully with ID: {created_user.id}")
     return created_user
@@ -60,19 +67,31 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @router.get(
     "/",
     response_model=List[schemas.UserResponse],
-    summary="Get a list of all employees",
+    summary="Get a list of employees for a specific manager",
 )
 def read_users(
+    manager_id: Optional[int] = Query(None, description="Manager ID for data isolation (optional)"),
     skip: int = 0,
     limit: int = Query(default=100, lte=200),
+    system_role: Optional[SystemRole] = Query(
+        None, description="Filter by system role"
+    ),
     db: Session = Depends(get_db),
 ):
     """
-    Retrieve a list of users/employees with pagination.
+    Retrieve a list of users/employees.
+    - **manager_id**: Optional manager ID for filtering. If provided, only returns employees owned by that manager. If None, returns all employees (for admins/global views).
     - **skip**: Number of records to skip.
     - **limit**: Maximum number of records to return (max 200).
+    - **system_role**: Optional filter by system role.
     """
-    users = crud.get_users(db, skip=skip, limit=limit)
+    users = crud.get_users(
+        db,
+        skip=skip,
+        limit=limit,
+        manager_id=manager_id,
+        system_role=system_role,
+    )
     return users
 
 
@@ -84,7 +103,7 @@ def read_users(
 def read_user(user_id: int, db: Session = Depends(get_db)):
     """
     Retrieve a single user by their ID, including all their project assignments.
-    
+
     This supports US012: View a single employee's timeline across all projects.
     """
     db_user = crud.get_user(db, user_id=user_id)
@@ -92,14 +111,14 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     # Use the specialized CRUD function to get assignments
     assignments = crud.get_assignments_for_user(db, user_id=user_id)
-    
+
     # Combine the data into the detailed response schema
     user_response = schemas.UserWithAssignmentsResponse.model_validate(db_user)
     user_response.assignments = assignments
-    
+
     return user_response
 
 
@@ -132,7 +151,7 @@ def update_user(
             )
 
     update_data = user_update.model_dump(exclude_unset=True)
-    
+
     # Handle password update separately
     if "password" in update_data and update_data["password"]:
         hashed_password = security.get_password_hash(update_data["password"])

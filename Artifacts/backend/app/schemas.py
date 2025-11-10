@@ -16,7 +16,6 @@ class APIBaseModel(BaseModel):
 
 class SystemRole(str, enum.Enum):
     ADMIN = "Admin"
-    DIRECTOR = "Director"
     PM = "PM"
     EMPLOYEE = "Employee"
 
@@ -52,7 +51,7 @@ class RoleBase(APIBaseModel):
 
 
 class RoleCreate(RoleBase):
-    pass
+    owner_id: Optional[int] = None
 
 
 class RoleUpdate(APIBaseModel):
@@ -64,6 +63,7 @@ class RoleInDB(RoleBase):
     id: int
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    owner_id: Optional[int] = None
 
 
 class RoleResponse(RoleInDB):
@@ -80,7 +80,7 @@ class LCATBase(APIBaseModel):
 
 
 class LCATCreate(LCATBase):
-    pass
+    owner_id: Optional[int] = None
 
 
 class LCATUpdate(APIBaseModel):
@@ -92,6 +92,7 @@ class LCATInDB(LCATBase):
     id: int
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    owner_id: Optional[int] = None
 
 
 class LCATResponse(LCATInDB):
@@ -107,6 +108,10 @@ class UserBase(APIBaseModel):
     full_name: str = Field(..., min_length=2, max_length=100, description="User's full name")
     system_role: SystemRole = Field(..., description="User's role within the application for RBAC")
     is_active: bool = Field(True, description="Whether the user account is active")
+    manager_id: Optional[int] = Field(
+        None,
+        description="Parent manager ID for employee accounts. Required when system_role is Employee.",
+    )
 
 
 class UserCreate(UserBase):
@@ -205,6 +210,19 @@ class AllocationInDB(AllocationBase):
 
 class AllocationResponse(AllocationInDB):
     pass
+
+
+class AllocationDistributionRequest(APIBaseModel):
+    start_year: int = Field(..., ge=2020, le=2050)
+    start_month: int = Field(..., ge=1, le=12)
+    end_year: int = Field(..., ge=2020, le=2050)
+    end_month: int = Field(..., ge=1, le=12)
+    total_hours: Optional[int] = Field(
+        None, ge=0, description="Total hours to distribute. Defaults to remaining funded hours."
+    )
+    strategy: Optional[str] = Field(
+        "even", description="Distribution strategy identifier (currently only 'even')."
+    )
 
 
 # ======================================================================================
@@ -366,3 +384,9 @@ class ProjectWithDetailsResponse(ProjectResponse):
     """Project response including all its assignments and overrides."""
     assignments: List[ProjectAssignmentResponse] = []
     monthly_hour_overrides: List[MonthlyHourOverrideResponse] = []
+    viewers: List[UserSummaryResponse] = []
+
+
+class ProjectImportResponse(APIBaseModel):
+    created_projects: List[ProjectResponse] = []
+    skipped_codes: List[str] = []

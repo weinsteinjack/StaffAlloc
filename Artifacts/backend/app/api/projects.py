@@ -9,13 +9,14 @@ This module provides RESTful endpoints for managing projects, including:
 Supports user stories: US001, US007
 """
 import logging
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.db.session import get_db
+from app.services.importer import ProjectImportError, import_projects_from_workbook
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
     Create a new project.
     - **code**: Must be a unique project code.
     """
-    db_project = crud.get_project_by_code(db, code=project.code)
+    db_project = crud.get_project_by_code(db, code=project.code, manager_id=project.manager_id)
     if db_project:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -51,17 +52,25 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
 @router.get(
     "/",
     response_model=List[schemas.ProjectResponse],
-    summary="Get a list of all projects",
+    summary="Get a list of projects for a specific manager",
 )
 def read_projects(
+    manager_id: Optional[int] = Query(None, description="Manager ID for data isolation (optional)"),
     skip: int = 0,
     limit: int = Query(default=100, lte=200),
     db: Session = Depends(get_db),
 ):
     """
-    Retrieve a list of projects with pagination.
+    Retrieve a list of projects.
+    If manager_id is provided, only returns projects owned by that manager.
+    If manager_id is None, returns all projects (for admins/global views).
     """
-    projects = crud.get_projects(db, skip=skip, limit=limit)
+    projects = crud.get_projects(
+        db,
+        skip=skip,
+        limit=limit,
+        manager_id=manager_id,
+    )
     return projects
 
 
@@ -89,6 +98,7 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
     project_response = schemas.ProjectWithDetailsResponse.model_validate(db_project)
     project_response.assignments = assignments
     project_response.monthly_hour_overrides = overrides
+    project_response.viewers = []
 
     return project_response
 
@@ -112,8 +122,12 @@ def update_project(
 
     # If project code is being changed, ensure it's unique
     if project_update.code and project_update.code != db_project.code:
-        existing_project = crud.get_project_by_code(db, code=project_update.code)
-        if existing_project:
+        existing_project = crud.get_project_by_code(
+            db,
+            code=project_update.code,
+            manager_id=db_project.manager_id,
+        )
+        if existing_project and existing_project.id != project_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Project code '{project_update.code}' is already in use.",
@@ -143,6 +157,33 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
         )
     logger.info(f"Project with ID {project_id} was deleted.")
     return None
+
+
+@router.post(
+    "/import",
+    response_model=schemas.ProjectImportResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Import projects from an Excel workbook",
+)
+async def import_projects(
+    manager_id: Optional[int] = Query(None, description="Assign imported projects to this manager ID"),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    contents = await file.read()
+    try:
+        created_projects, skipped = import_projects_from_workbook(
+            data=contents,
+            db=db,
+            manager_id=manager_id,
+        )
+    except ProjectImportError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    return schemas.ProjectImportResponse(
+        created_projects=[schemas.ProjectResponse.model_validate(project) for project in created_projects],
+        skipped_codes=skipped,
+    )
 
 
 # --- Monthly Hour Overrides Sub-resource ---
