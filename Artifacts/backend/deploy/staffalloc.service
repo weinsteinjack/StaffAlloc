@@ -1,0 +1,41 @@
+[Unit]
+Description=StaffAlloc FastAPI Application
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/staffalloc
+
+# Environment variables
+Environment="PATH=/opt/staffalloc/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="ENVIRONMENT=production"
+Environment="USE_AWS_SECRETS=true"
+Environment="AWS_REGION=us-east-1"
+Environment="PYTHONUNBUFFERED=1"
+
+# Start the application
+ExecStart=/bin/bash /opt/staffalloc/deploy/start_server.sh
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=staffalloc
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits (for t2.micro: 1 vCPU, 1 GB RAM)
+MemoryLimit=800M
+CPUQuota=90%
+
+[Install]
+WantedBy=multi-user.target
+

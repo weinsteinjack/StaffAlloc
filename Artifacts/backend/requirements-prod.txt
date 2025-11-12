@@ -1,0 +1,83 @@
+# Production Dependencies for StaffAlloc Backend
+# AWS Deployment on EC2 with SQLite
+
+# ============================================================================
+# Core Web Framework
+# ============================================================================
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# ============================================================================
+# Database
+# ============================================================================
+sqlalchemy>=2.0.0
+
+# ============================================================================
+# Security & Authentication
+# ============================================================================
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# ============================================================================
+# AWS SDK - For Parameter Store Integration
+# ============================================================================
+boto3>=1.34.0
+botocore>=1.34.0
+
+# ============================================================================
+# Logging & Monitoring
+# ============================================================================
+structlog>=24.1.0
+ujson>=5.9.0
+
+# ============================================================================
+# HTTP Client
+# ============================================================================
+httpx>=0.26.0
+
+# ============================================================================
+# Excel Export Functionality
+# ============================================================================
+openpyxl>=3.1.0
+
+# ============================================================================
+# Production Server Utilities
+# ============================================================================
+# Gunicorn can be used as an alternative to uvicorn in production
+gunicorn>=21.2.0
+
+# Python-multipart for file uploads
+python-multipart>=0.0.6
+
+# ============================================================================
+# Optional: AI/LLM Integration (if using AI features)
+# ============================================================================
+# Uncomment these if you plan to use AI features in production
+
+# Google Generative AI (for Gemini models)
+# google-genai>=0.3.0
+
+# Sentence transformers for embeddings
+# sentence-transformers>=2.2.0
+
+# Vector database
+# chromadb>=0.4.0
+
+# ============================================================================
+# Production Deployment Notes
+# ============================================================================
+# 1. Install on EC2: pip install -r requirements-prod.txt
+# 2. Use virtual environment: python3 -m venv venv && source venv/bin/activate
+# 3. Ensure Python 3.10+ is installed
+# 4. For performance, consider using uvloop: pip install uvloop
+# 5. Monitor memory usage with: pip install memory-profiler
+
+# ============================================================================
+# Version Information
+# ============================================================================
+# Python Version Required: 3.10+
+# Tested on: Ubuntu 22.04 LTS (AWS EC2)
+# Last Updated: 2025-11-12
+
