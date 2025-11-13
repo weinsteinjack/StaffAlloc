@@ -25,9 +25,9 @@ from dotenv import load_dotenv
 load_dotenv()
 print("\n3. load_dotenv() called")
 
-# Test 4: Check if GOOGLE_API_KEY is loaded
-api_key = os.getenv("GOOGLE_API_KEY")
-print(f"\n4. GOOGLE_API_KEY loaded: {'Yes' if api_key else 'No'}")
+# Test 4: Check if ANTHROPIC_API_KEY is loaded
+api_key = os.getenv("ANTHROPIC_API_KEY")
+print(f"\n4. ANTHROPIC_API_KEY loaded: {'Yes' if api_key else 'No'}")
 if api_key:
     print(f"   Key starts with: {api_key[:20]}..." if len(api_key) > 20 else f"   Key: {api_key}")
 else:

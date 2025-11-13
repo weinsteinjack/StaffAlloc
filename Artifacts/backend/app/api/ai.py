@@ -12,14 +12,18 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.db.session import get_db
 from app.services.ai import (
-    GeminiConfigurationError,
-    GeminiInvocationError,
+    AIConfigurationError,
+    AIInvocationError,
     generate_chat_response,
     generate_forecast_insights,
     generate_workload_balance_suggestions,
     reindex_rag_cache,
     scan_allocation_conflicts,
 )
+
+# Legacy aliases for backward compatibility
+GeminiConfigurationError = AIConfigurationError
+GeminiInvocationError = AIInvocationError
 
 logger = logging.getLogger(__name__)
 

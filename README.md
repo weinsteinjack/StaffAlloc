@@ -153,11 +153,12 @@ For detailed architecture information, see [`Artifacts/Documentation/architectur
 | **React Hook Form** | Form management | 7.49 |
 | **TanStack Query** | Data fetching | 5.17 |
 
-### AI & ML (Optional)
+### AI & ML
 
-- **Ollama** or **LM Studio**: Local LLM inference
-- **ChromaDB**: Vector database for RAG
-- **Sentence Transformers**: Text embeddings
+- **Anthropic Claude**: Claude 3.5 Sonnet for RAG features
+- **Sentence Transformers**: Text embeddings (all-MiniLM-L6-v2)
+- **ChromaDB**: Vector database for RAG (optional)
+- **Ollama** or **LM Studio**: Local LLM inference (optional)
 
 ---
 
@@ -303,11 +304,19 @@ uvicorn app.main:app --reload --port 8000
 Create a `.env` file in `Artifacts/backend/` (optional):
 
 ```bash
+# Database
 DATABASE_URL=sqlite:///./data/staffalloc.db
+
+# API Configuration
 API_V1_PREFIX=/api/v1
 SECRET_KEY=your-secret-key-here
 DEBUG=True
+
+# Anthropic Claude API (required for AI features)
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+
+> **Note:** For detailed AI setup instructions, see [ANTHROPIC_SETUP.md](ANTHROPIC_SETUP.md)
 
 ---
 
@@ -644,13 +653,17 @@ StaffAlloc leverages Generative AI throughout the Software Development Lifecycle
 - [`reactapp/src/components/`](reactapp/src/components/)
 - [`Artifacts/Frontend/`](Artifacts/Frontend/)
 
-### AI-Powered Features (Future)
+### AI-Powered Features (Production-Ready)
 
-The platform includes placeholders for advanced AI features:
+The platform includes advanced AI features powered by Claude 3.5 Sonnet:
 - **RAG Chat Interface**: Natural language querying of staffing data
 - **Staffing Recommendations**: AI-driven employee suggestions
-- **Conflict Detection**: Automatic over-allocation identification
-- **Predictive Forecasting**: Future hiring needs prediction
+- **Conflict Detection**: Automatic over-allocation identification with remediation suggestions
+- **Predictive Forecasting**: Future hiring needs prediction based on project pipeline
+- **Workload Balancing**: Intelligent recommendations for redistributing work
+- **Smart Import**: AI-powered spreadsheet header mapping
+
+> **Setup Required:** Configure `ANTHROPIC_API_KEY` in your `.env` file. See [ANTHROPIC_SETUP.md](ANTHROPIC_SETUP.md) for details.
 
 ---
 
@@ -668,6 +681,7 @@ Comprehensive documentation is available in the `Artifacts/Documentation/` direc
 
 Additional resources:
 - [**Changelog**](CHANGELOG.md) - **Complete list of fixes, improvements, and changes**
+- [**Anthropic Setup Guide**](ANTHROPIC_SETUP.md) - **Claude API configuration for AI features**
 - [Backend Quick Start Guide](Artifacts/backend/QUICKSTART.md)
 - [Backend Review Report](Artifacts/backend/BACKEND_REVIEW.md)
 - [Frontend Setup Guide](reactapp/README.md)

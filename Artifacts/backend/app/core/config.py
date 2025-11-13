@@ -112,6 +112,11 @@ class Settings(BaseSettings):
     # The name of the LLM model to use for chat and generation via Ollama.
     # 'phi3:mini' is a small, fast model suitable for real-time interaction.
     LLM_MODEL_NAME: str = "phi3:mini"
+    
+    # Anthropic Claude API configuration for RAG features
+    # Set ANTHROPIC_API_KEY in .env file to enable Claude-powered AI features
+    ANTHROPIC_API_KEY: Optional[str] = None
+    CLAUDE_MODEL: str = "claude-haiku-4-5-20251001"  # Claude Haiku 4.5 (fast, cost-effective)
 
     @field_validator('SECRET_KEY', mode='before')
     @classmethod

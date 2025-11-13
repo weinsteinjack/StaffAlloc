@@ -20,7 +20,7 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-CLAUDE_MODEL = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet model (latest stable)
+CLAUDE_MODEL = "claude-haiku-4-5-20251001"  # Claude Haiku 4.5 (fast, cost-effective)
 
 # Defer anthropic import to avoid hanging during module import
 # The import will happen in _ensure_client() when actually needed
@@ -53,10 +53,10 @@ def _ensure_client() -> "anthropic.Anthropic":
     if _CLIENT is not None:
         return _CLIENT
 
-    api_key = os.getenv("WINDSURF_API_KEY")
+    api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise AIConfigurationError(
-            "WINDSURF_API_KEY is not configured. Add it to the backend .env file so the AI features can access Claude."
+            "ANTHROPIC_API_KEY is not configured. Add it to the backend .env file so the AI features can access Claude."
         )
 
     try:

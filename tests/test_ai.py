@@ -33,7 +33,7 @@ def test_chat_endpoint_placeholder(client, api_prefix):
         json={"query": "What is the status of Project X?", "context_limit": 3},
     )
     # AI chat now returns real responses or configuration errors
-    assert response.status_code in [200, 503]  # 503 if GOOGLE_API_KEY not configured
+    assert response.status_code in [200, 503]  # 503 if ANTHROPIC_API_KEY not configured
     if response.status_code == 200:
         data = response.json()
         assert "answer" in data

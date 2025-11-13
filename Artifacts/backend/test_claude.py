@@ -16,9 +16,36 @@ print("=" * 60)
 print("Testing Claude Integration")
 print("=" * 60)
 
+# Test 0: Check network connectivity
+print("\n0. Checking network connectivity...")
+try:
+    import socket
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
+    # Test DNS resolution
+    socket.gethostbyname("api.anthropic.com")
+    print("   [OK] DNS resolution working (api.anthropic.com)")
+    
+    # Test HTTPS connectivity
+    import httpx
+    test_client = httpx.Client(verify=False, timeout=10.0)
+    try:
+        response = test_client.get("https://api.anthropic.com/")
+        print(f"   [OK] HTTPS connectivity working (status: {response.status_code})")
+    except Exception as conn_err:
+        print(f"   [WARN] HTTPS connection test: {conn_err}")
+        print("   Note: This may be normal - proceeding with API test...")
+    finally:
+        test_client.close()
+        
+except Exception as e:
+    print(f"   [WARN] Network check warning: {e}")
+    print("   Proceeding anyway - this check is informational only...")
+
 # Test 1: Check API key
-api_key = os.getenv("WINDSURF_API_KEY")
-print(f"\n1. WINDSURF_API_KEY loaded: {'Yes' if api_key else 'No'}")
+api_key = os.getenv("ANTHROPIC_API_KEY")
+print(f"\n1. ANTHROPIC_API_KEY loaded: {'Yes' if api_key else 'No'}")
 if api_key:
     print(f"   Key starts with: {api_key[:20]}...")
 else:
@@ -37,17 +64,22 @@ except ImportError as e:
 # Test 3: Initialize Claude client
 print("\n3. Initializing Claude client...")
 try:
-    client = anthropic.Anthropic(api_key=api_key)
-    print("   Success: Claude client initialized")
+    # Use the same SSL configuration as the production service
+    # This disables SSL verification for corporate proxy environments
+    import httpx
+    http_client = httpx.Client(verify=False, timeout=60.0)
+    client = anthropic.Anthropic(api_key=api_key, http_client=http_client)
+    print("   Success: Claude client initialized (SSL verification disabled for corporate proxy)")
 except Exception as e:
     print(f"   ERROR: Failed to initialize client: {e}")
     sys.exit(1)
 
 # Test 4: Make a simple query
 print("\n4. Testing Claude API call...")
+print("   (This may take a few seconds...)")
 try:
     response = client.messages.create(
-        model="claude-3-7-sonnet-20250219",
+        model="claude-haiku-4-5-20251001",
         max_tokens=100,
         messages=[
             {
@@ -70,6 +102,12 @@ try:
         
 except Exception as e:
     print(f"   ERROR: API call failed: {e}")
+    print("\n   Troubleshooting:")
+    print("   - Check your internet connection")
+    print("   - Verify your API key is valid at https://console.anthropic.com/")
+    print("   - If behind a corporate proxy, SSL verification is already disabled")
+    print("   - Check firewall settings (Anthropic API uses api.anthropic.com)")
+    print("   - Try running: ping api.anthropic.com")
     sys.exit(1)
 
 # Test 5: Test AI service functions
