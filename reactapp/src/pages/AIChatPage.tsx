@@ -127,7 +127,7 @@ export default function AIChatPage() {
       const errorMsg = error.message.includes('502') 
         ? 'The AI service is experiencing high load or a timeout. Please wait a moment and try again, or try a simpler question.' 
         : error.message.includes('503')
-        ? 'The AI service is not configured. Please check that the GOOGLE_API_KEY is set in the backend .env file.'
+        ? 'The local LLM service (Ollama) is not running or not configured. Please ensure Ollama is installed and running with: ollama serve'
         : `Unable to complete the request: ${error.message}`;
       
       appendMessage({

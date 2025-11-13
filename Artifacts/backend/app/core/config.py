@@ -110,7 +110,7 @@ class Settings(BaseSettings):
     # 'all-MiniLM-L6-v2' is a good default: fast, effective, and runs locally.
     EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
     # The name of the LLM model to use for chat and generation via Ollama.
-    # 'phi3:mini' is a small, fast model suitable for real-time interaction.
+    # 'phi3:mini' is a small, fast model (~2GB) suitable for real-time interaction on limited resources.
     LLM_MODEL_NAME: str = "phi3:mini"
 
     @field_validator('SECRET_KEY', mode='before')

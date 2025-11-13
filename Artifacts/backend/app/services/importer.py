@@ -11,8 +11,8 @@ from openpyxl import load_workbook
 
 from app import crud, models, schemas
 from app.services.ai import (
-    GeminiConfigurationError,
-    GeminiInvocationError,
+    OllamaConfigurationError,
+    OllamaInvocationError,
     suggest_header_mapping,
 )
 
@@ -176,14 +176,14 @@ def _resolve_header_map(sheet_name: str, header_cells, required_headers: Dict[st
             required_fields=missing,
             sheet_name=sheet_name,
         )
-    except GeminiConfigurationError:
+    except OllamaConfigurationError:
         logger.debug(
-            "Gemini header mapping unavailable; continuing with deterministic mapping",
+            "Ollama header mapping unavailable; continuing with deterministic mapping",
             exc_info=True,
         )
         return header_map
-    except GeminiInvocationError as exc:
-        logger.warning("Gemini header mapping failed for %s sheet: %s", sheet_name, exc)
+    except OllamaInvocationError as exc:
+        logger.warning("Ollama header mapping failed for %s sheet: %s", sheet_name, exc)
         return header_map
 
     for field, header_name in ai_mapping.items():

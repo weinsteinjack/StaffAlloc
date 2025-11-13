@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.db.session import get_db
 from app.services.ai import (
-    GeminiConfigurationError,
-    GeminiInvocationError,
+    OllamaConfigurationError,
+    OllamaInvocationError,
     generate_chat_response,
     generate_forecast_insights,
     generate_workload_balance_suggestions,
@@ -116,13 +116,13 @@ class ReindexResponse(BaseModel):
 
 
 def _raise_from_ai_error(exc: Exception) -> None:
-    if isinstance(exc, GeminiConfigurationError):
+    if isinstance(exc, OllamaConfigurationError):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
-    if isinstance(exc, GeminiInvocationError):
-        logger.exception("Gemini invocation failed")
+    if isinstance(exc, OllamaInvocationError):
+        logger.exception("Ollama invocation failed")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="AI service temporarily unavailable. Try again shortly.",
@@ -144,7 +144,7 @@ def chat_query(request: ChatQueryRequest, db: Session = Depends(get_db)) -> Chat
             context_limit=request.context_limit,
             manager_id=request.manager_id
         )
-    except (GeminiConfigurationError, GeminiInvocationError) as exc:  # pragma: no cover - error paths
+    except (OllamaConfigurationError, OllamaInvocationError) as exc:  # pragma: no cover - error paths
         _raise_from_ai_error(exc)
     return ChatQueryResponse(query=request.query, answer=answer, sources=sources)
 
@@ -160,7 +160,7 @@ def detect_conflicts(
 ) -> ConflictsResponse:
     try:
         conflicts, message = scan_allocation_conflicts(db, manager_id=manager_id)
-    except (GeminiConfigurationError, GeminiInvocationError) as exc:  # pragma: no cover
+    except (OllamaConfigurationError, OllamaInvocationError) as exc:  # pragma: no cover
         _raise_from_ai_error(exc)
 
     conflict_models = [
@@ -198,7 +198,7 @@ def get_forecast(
         predictions, message = generate_forecast_insights(
             db, months_ahead=months_ahead, manager_id=manager_id
         )
-    except (GeminiConfigurationError, GeminiInvocationError) as exc:  # pragma: no cover
+    except (OllamaConfigurationError, OllamaInvocationError) as exc:  # pragma: no cover
         _raise_from_ai_error(exc)
 
     prediction_models = [
@@ -225,7 +225,7 @@ def get_balance_suggestions(
         suggestions, message = generate_workload_balance_suggestions(
             db, project_id=project_id, manager_id=manager_id
         )
-    except (GeminiConfigurationError, GeminiInvocationError) as exc:  # pragma: no cover
+    except (OllamaConfigurationError, OllamaInvocationError) as exc:  # pragma: no cover
         _raise_from_ai_error(exc)
 
     suggestion_models = [

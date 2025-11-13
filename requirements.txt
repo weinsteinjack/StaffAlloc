@@ -7,8 +7,8 @@
 # OpenAI API client (for GPT models)
 openai>=1.0.0
 
-# Google Generative AI (for Gemini models)
-google-genai>=0.3.0
+# Google Generative AI (for Gemini models) - REMOVED, using local Ollama instead
+# google-genai>=0.3.0
 
 # Anthropic API client (for Claude models)
 anthropic>=0.18.0
@@ -125,19 +125,16 @@ pathlib>=1.0.0  # Built-in, included for documentation
 asyncio>=3.4.3  # Built-in, included for documentation
 
 # ============================================================================
-# AI/ML Libraries (Phase 3 - V1.3/V1.4)
+# AI/ML Libraries - Local Ollama Integration
 # ============================================================================
-# Note: These are for future AI features and are optional for MVP
-# Uncomment when implementing AI features
-
 # Local LLM integration (Ollama)
-# ollama>=0.1.0
+ollama>=0.1.0
 
-# Sentence transformers for embeddings
-# sentence-transformers>=2.2.0
+# Sentence transformers for embeddings (RAG)
+sentence-transformers>=2.2.0
 
-# Vector database
-# chromadb>=0.4.0
+# Vector database (RAG)
+chromadb>=0.4.0
 
 # Excel export functionality
 openpyxl>=3.1.0

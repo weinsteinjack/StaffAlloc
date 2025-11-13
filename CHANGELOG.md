@@ -4,6 +4,40 @@ Consolidates all fixes, improvements, and changes made to the StaffAlloc applica
 
 ---
 
+## Migration to Local LLM (November 2025)
+
+### Switched from Google Gemini to Local Ollama
+
+**Reason:** Ensure complete data privacy - no sensitive staffing data is transmitted to external services.
+
+**Changes:**
+- Replaced Google Gemini API with local Ollama LLM server
+- Model: `llama3.1:8b` (excellent instruction following, JSON reliability)
+- All AI features now run 100% locally on-premises
+- No external API keys or authentication required
+- Can run completely offline after initial model download
+
+**Privacy Guarantees:**
+- LLM inference happens entirely on local machine
+- No data leaves the computer
+- No telemetry or usage tracking
+- Zero API costs
+
+**Files Modified:**
+- Created: `app/services/ai/ollama.py` (new local LLM service)
+- Updated: `app/services/ai/__init__.py`, `app/api/ai.py`, `app/services/importer.py`
+- Config: `app/core/config.py` (LLM_MODEL_NAME = "llama3.1:8b")
+- Requirements: `requirements.txt`, `requirements-prod.txt` (removed google-genai, added ollama)
+- Frontend: `src/pages/AIChatPage.tsx`, `src/components/projects/ProjectAIInsights.tsx`
+
+**Setup Instructions:**
+1. Install Ollama: https://ollama.com/download
+2. Pull the model: `ollama pull llama3.1:8b`
+3. Start server: `ollama serve` (runs on localhost:11434)
+4. Reinstall dependencies: `pip install -r requirements.txt`
+
+---
+
 ## Security Fixes
 
 ### Manager Data Isolation (Critical)

@@ -644,13 +644,21 @@ StaffAlloc leverages Generative AI throughout the Software Development Lifecycle
 - [`reactapp/src/components/`](reactapp/src/components/)
 - [`Artifacts/Frontend/`](Artifacts/Frontend/)
 
-### AI-Powered Features (Future)
+### AI-Powered Features (Local LLM)
 
-The platform includes placeholders for advanced AI features:
+The platform includes AI features powered by **local Ollama LLM** for complete data privacy:
 - **RAG Chat Interface**: Natural language querying of staffing data
 - **Staffing Recommendations**: AI-driven employee suggestions
 - **Conflict Detection**: Automatic over-allocation identification
 - **Predictive Forecasting**: Future hiring needs prediction
+
+**Setup:**
+1. Install Ollama: https://ollama.com/download
+2. Pull the model: `ollama pull llama3.1:8b`
+3. Start the server: `ollama serve`
+4. The backend will automatically connect to `http://localhost:11434`
+
+**Privacy:** All AI inference runs locally - no data leaves your machine.
 
 ---
 

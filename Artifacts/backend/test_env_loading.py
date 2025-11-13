@@ -25,28 +25,31 @@ from dotenv import load_dotenv
 load_dotenv()
 print("\n3. load_dotenv() called")
 
-# Test 4: Check if GOOGLE_API_KEY is loaded
-api_key = os.getenv("GOOGLE_API_KEY")
-print(f"\n4. GOOGLE_API_KEY loaded: {'Yes' if api_key else 'No'}")
-if api_key:
-    print(f"   Key starts with: {api_key[:20]}..." if len(api_key) > 20 else f"   Key: {api_key}")
-else:
-    print("   ERROR: API key not found!")
+# Test 4: Check Ollama configuration
+print("\n4. Checking Ollama configuration...")
+from app.core.config import settings
+print(f"   OLLAMA_API_URL: {settings.OLLAMA_API_URL}")
+print(f"   LLM_MODEL_NAME: {settings.LLM_MODEL_NAME}")
 
-# Test 5: Try importing gemini module
-print("\n5. Testing gemini module import...")
+# Test 5: Try importing ollama module
+print("\n5. Testing ollama module import...")
 try:
-    from app.services.ai import gemini
-    print("   ✅ Gemini module imported successfully")
+    from app.services.ai import ollama
+    print("   ✅ Ollama module imported successfully")
     
-    # Test 6: Try to initialize client
-    print("\n6. Testing Gemini client initialization...")
+    # Test 6: Try to check Ollama connectivity
+    print("\n6. Testing Ollama server connectivity...")
     try:
-        from app.services.ai.gemini import _ensure_client
-        client = _ensure_client()
-        print("   ✅ Gemini client initialized successfully!")
+        import httpx
+        with httpx.Client(timeout=5.0) as client:
+            response = client.get(settings.OLLAMA_API_URL)
+            if response.status_code == 200:
+                print("   ✅ Ollama server is running!")
+            else:
+                print(f"   ⚠️ Ollama server responded with status: {response.status_code}")
     except Exception as e:
-        print(f"   ❌ Failed to initialize client: {e}")
+        print(f"   ❌ Cannot connect to Ollama: {e}")
+        print(f"   💡 Make sure Ollama is installed and running: ollama serve")
         
 except Exception as e:
     print(f"   ❌ Failed to import: {e}")

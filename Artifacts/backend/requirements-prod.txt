@@ -52,18 +52,16 @@ gunicorn>=21.2.0
 python-multipart>=0.0.6
 
 # ============================================================================
-# Optional: AI/LLM Integration (if using AI features)
+# AI/LLM Integration (Local Ollama)
 # ============================================================================
-# Uncomment these if you plan to use AI features in production
+# Ollama Python client for local LLM inference
+ollama>=0.1.0
 
-# Google Generative AI (for Gemini models)
-# google-genai>=0.3.0
+# Sentence transformers for embeddings (RAG)
+sentence-transformers>=2.2.0
 
-# Sentence transformers for embeddings
-# sentence-transformers>=2.2.0
-
-# Vector database
-# chromadb>=0.4.0
+# Vector database (RAG)
+chromadb>=0.4.0
 
 # ============================================================================
 # Email Validation (Required for Pydantic email fields)
