@@ -1,4 +1,4 @@
-"""Gemini-powered AI helpers for StaffAlloc."""
+"""Claude-powered AI helpers for StaffAlloc."""
 
 from __future__ import annotations
 
@@ -20,57 +20,59 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-GEMINI_MODEL = "gemini-2.0-flash-lite"  # Fast experimental model, better availability
+CLAUDE_MODEL = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet model (latest stable)
 
-# Defer genai import to avoid hanging during module import
+# Defer anthropic import to avoid hanging during module import
 # The import will happen in _ensure_client() when actually needed
-genai = None
-genai_types = None
+anthropic = None
 
-_CLIENT: Optional["genai.Client"] = None
-
-
-class GeminiConfigurationError(RuntimeError):
-    """Raised when the Gemini client cannot be configured."""
+_CLIENT: Optional["anthropic.Anthropic"] = None
 
 
-class GeminiInvocationError(RuntimeError):
-    """Raised when a Gemini request fails."""
+class AIConfigurationError(RuntimeError):
+    """Raised when the AI client cannot be configured."""
 
 
-def _ensure_client() -> "genai.Client":
-    global _CLIENT, genai, genai_types
+class AIInvocationError(RuntimeError):
+    """Raised when an AI request fails."""
+
+
+def _ensure_client() -> "anthropic.Anthropic":
+    global _CLIENT, anthropic
     
-    # Lazy import of genai to avoid hanging during module import
-    if genai is None or genai_types is None:
+    # Lazy import of anthropic to avoid hanging during module import
+    if anthropic is None:
         try:
-            from google import genai as _genai  # type: ignore
-            from google.genai import types as _genai_types  # type: ignore
-            genai = _genai
-            genai_types = _genai_types
+            import anthropic as _anthropic  # type: ignore
+            anthropic = _anthropic
         except ImportError:  # pragma: no cover - environment dependent
-            raise GeminiConfigurationError(
-                "google-genai is not installed. Install it with 'pip install google-genai'."
+            raise AIConfigurationError(
+                "anthropic SDK is not installed. Install it with 'pip install anthropic'."
             )
 
     if _CLIENT is not None:
         return _CLIENT
 
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = os.getenv("WINDSURF_API_KEY")
     if not api_key:
-        raise GeminiConfigurationError(
-            "GOOGLE_API_KEY is not configured. Add it to the backend .env file so the AI features can access Gemini."
+        raise AIConfigurationError(
+            "WINDSURF_API_KEY is not configured. Add it to the backend .env file so the AI features can access Claude."
         )
 
     try:
-        _CLIENT = genai.Client(api_key=api_key)
+        # For corporate environments with SSL interception, we may need to use a custom httpx client
+        # This disables SSL verification for development - in production, add proper CA certs
+        import httpx
+        http_client = httpx.Client(verify=False, timeout=60.0)
+        _CLIENT = anthropic.Anthropic(api_key=api_key, http_client=http_client)
+        logger.info("Claude client initialized successfully (SSL verification disabled for corporate proxy)")
     except Exception as exc:  # pragma: no cover - network/client dependent
-        raise GeminiConfigurationError(f"Failed to initialise Gemini client: {exc!s}") from exc
+        raise AIConfigurationError(f"Failed to initialise Claude client: {exc!s}") from exc
 
     return _CLIENT
 
 
-def _call_gemini(
+def _call_claude(
     prompt: str,
     *,
     temperature: float = 0.25,
@@ -83,52 +85,46 @@ def _call_gemini(
     
     while retry_count <= max_retries:
         try:
-            logger.info(f"Calling Gemini API: model={GEMINI_MODEL}, max_tokens={max_output_tokens}, attempt={retry_count+1}")
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=[prompt],
-                config=genai_types.GenerateContentConfig(
-                    temperature=temperature,
-                    max_output_tokens=max_output_tokens,
-                    response_modalities=["TEXT"],
-                ),
+            logger.info(f"Calling Claude API: model={CLAUDE_MODEL}, max_tokens={max_output_tokens}, attempt={retry_count+1}")
+            response = client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=max_output_tokens,
+                temperature=temperature,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
             )
-            logger.info("Gemini API call successful")
+            logger.info("Claude API call successful")
             break
         except Exception as exc:  # pragma: no cover - network/client dependent
             retry_count += 1
             error_str = str(exc).lower()
-            logger.error(f"Gemini API call failed: {exc} (attempt {retry_count}/{max_retries+1})")
+            logger.error(f"Claude API call failed: {exc} (attempt {retry_count}/{max_retries+1})")
             
             # Don't retry on certain errors
-            if 'rate limit' in error_str or 'quota' in error_str:
-                raise GeminiInvocationError(f"API quota exceeded: {exc!s}. Please wait a moment before trying again.") from exc
+            if 'rate limit' in error_str or 'quota' in error_str or '429' in error_str:
+                raise AIInvocationError(f"API quota exceeded: {exc!s}. Please wait a moment before trying again.") from exc
             
             # If we've exhausted retries, raise the error
             if retry_count > max_retries:
-                raise GeminiInvocationError(f"Gemini request failed: {exc!s}. Try a simpler question or wait a moment.") from exc
+                raise AIInvocationError(f"Claude request failed: {exc!s}. Try a simpler question or wait a moment.") from exc
             
             # Wait before retrying
             import time
-            wait_time = 1  # Quick retry for Flash model
+            wait_time = 1  # Quick retry
             logger.info(f"Retrying in {wait_time} second...")
             time.sleep(wait_time)
 
-    if hasattr(response, "text") and response.text:
-        return response.text.strip()
+    # Extract text from Claude's response
+    if hasattr(response, "content") and response.content:
+        text_blocks = [block.text for block in response.content if hasattr(block, "text")]
+        if text_blocks:
+            return "\n".join(text_blocks).strip()
 
-    if getattr(response, "candidates", None):
-        fragments: List[str] = []
-        for candidate in response.candidates:
-            if getattr(candidate, "content", None) and getattr(candidate.content, "parts", None):
-                for part in candidate.content.parts:
-                    text = getattr(part, "text", None)
-                    if text:
-                        fragments.append(text)
-        if fragments:
-            return "\n".join(fragments).strip()
-
-    raise GeminiInvocationError("Gemini did not return any text output.")
+    raise AIInvocationError("Claude did not return any text output.")
 
 
 def _format_context_for_prompt(context: Iterable[Tuple[str, str]]) -> str:
@@ -141,7 +137,7 @@ def _format_context_for_prompt(context: Iterable[Tuple[str, str]]) -> str:
 def suggest_header_mapping(
     *, headers: Sequence[str], required_fields: Sequence[str], sheet_name: str
 ) -> Dict[str, str]:
-    """Use Gemini to map spreadsheet headers to expected field names."""
+    """Use Claude to map spreadsheet headers to expected field names."""
 
     prompt = (
         "You are assisting with importing a staffing spreadsheet. "
@@ -151,14 +147,14 @@ def suggest_header_mapping(
         f"\n\nSheet: {sheet_name}\nHeaders: {headers}\nRequired fields: {required_fields}\n\nJSON mapping:"
     )
 
-    response_text = _call_gemini(prompt, temperature=0.1, max_output_tokens=256)
+    response_text = _call_claude(prompt, temperature=0.1, max_output_tokens=256)
     try:
         mapping = json.loads(response_text)
     except json.JSONDecodeError as exc:  # pragma: no cover - depends on model output
-        raise GeminiInvocationError("Gemini returned an invalid header mapping JSON.") from exc
+        raise AIInvocationError("Claude returned an invalid header mapping JSON.") from exc
 
     if not isinstance(mapping, dict):
-        raise GeminiInvocationError("Gemini returned an unexpected header mapping structure.")
+        raise AIInvocationError("Claude returned an unexpected header mapping structure.")
 
     cleaned: Dict[str, str] = {}
     for field in required_fields:
@@ -210,7 +206,7 @@ def generate_chat_response(
         "Answer:"
     )
 
-    answer = _call_gemini(prompt, max_output_tokens=1024, temperature=0.3)
+    answer = _call_claude(prompt, max_output_tokens=1024, temperature=0.3)
     sources = [source for source, _ in context]
     return answer, sources
 
@@ -321,9 +317,9 @@ def scan_allocation_conflicts(db: Session, *, manager_id: Optional[int] = None) 
             )
 
         prompt = "\n".join(prompt_lines) + "\n\nMitigation guidance:"
-        reasoning = _call_gemini(prompt, temperature=0.2)
+        reasoning = _call_claude(prompt, temperature=0.2)
         message += reasoning
-    except (GeminiConfigurationError, GeminiInvocationError):
+    except (AIConfigurationError, AIInvocationError):
         # Provide basic guidance without AI
         message += "Review allocations and consider: (1) Reducing hours on lower-priority projects, (2) Redistributing work to available team members, or (3) Adjusting project timelines."
 
@@ -396,9 +392,9 @@ def generate_forecast_insights(db: Session, *, months_ahead: int = 3, manager_id
             + "\n\nOutlook:"
         )
 
-        reasoning = _call_gemini(prompt, temperature=0.3)
+        reasoning = _call_claude(prompt, temperature=0.3)
         message += reasoning
-    except (GeminiConfigurationError, GeminiInvocationError):
+    except (AIConfigurationError, AIInvocationError):
         # Provide basic guidance without AI
         if shortages:
             message += "Consider hiring additional staff or adjusting project timelines to meet demand."
@@ -553,11 +549,10 @@ def generate_workload_balance_suggestions(
             )
 
         prompt = "\n".join(prompt_lines) + "\n\nRationale:"
-        reasoning = _call_gemini(prompt, temperature=0.2)
+        reasoning = _call_claude(prompt, temperature=0.2)
         message += reasoning
-    except (GeminiConfigurationError, GeminiInvocationError):
+    except (AIConfigurationError, AIInvocationError):
         # Provide basic guidance without AI
         message += "Consider redistributing work from overloaded employees to those with capacity. This will improve team morale and reduce burnout risk."
 
     return suggestions, message
-
